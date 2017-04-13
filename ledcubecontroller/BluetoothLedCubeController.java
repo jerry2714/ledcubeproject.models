@@ -149,6 +149,17 @@ public class BluetoothLedCubeController extends LedCubeController {
         return false;
     }
 
+    public boolean isConnected()
+    {
+        try{
+            return bluetoothSocket.isConnected();
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+
+
 
 
 

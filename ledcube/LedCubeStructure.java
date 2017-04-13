@@ -34,7 +34,6 @@ public class LedCubeStructure {
     public void setColor(int x, int y, int z, int r, int g, int b) {
         int rgb = parseRGB(r, g, b);
         setColor(x, y, z, rgb);
-
     }
 
     private int parseRGB(int r, int g, int b) {
@@ -54,7 +53,7 @@ public class LedCubeStructure {
     public void clear() {
         for (int x = 0; x < sideLength; x++)
             for (int y = 0; y < sideLength; y++)
-                for (int z = 0; z < sideLength; y++)
+                for (int z = 0; z < sideLength; z++)
                     structure[x][y][z] = 0;
     }
 
