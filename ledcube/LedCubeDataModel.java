@@ -80,6 +80,13 @@ public class LedCubeDataModel extends LedCubeStructure {
         currentUsedSize = 0;
     }
 
+    public void clear()
+    {
+        super.clear();
+        clearBuffer();
+        setColor(0, 0, 0, 0);
+    }
+
     /**
      * 取得儲存目前的尚未取得過的資料(呼叫一次後會清空buffer，再次呼叫不會得到相同的buffer)
      * @return  輸出buffer
