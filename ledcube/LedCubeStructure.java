@@ -32,7 +32,8 @@ public class LedCubeStructure {
     }
 
     public void setColor(int x, int y, int z, int r, int g, int b) {
-        int rgb = parseRGB(r, g, b);
+        int mask = 0x000000FF;
+        int rgb = parseRGB(mask & r, mask & g, mask & b);
         setColor(x, y, z, rgb);
     }
 
