@@ -5,6 +5,7 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayDeque;
 
 /**
  * 用以輸出資料至LED立方體的控制裝置，並擁有包含製作命令碼的公能，可以依照不同的通訊方式來繼承擴展，例如藍芽、wifi等等
@@ -41,6 +42,9 @@ public class LedCubeController {
 
     private OutputStream outputStream = null;
     private InputStream inputStream = null;
+
+    private ArrayDeque<byte[]> queue = new ArrayDeque<>();
+    private int totalSizeInQueue = 0;
 
     public LedCubeController()
     {
@@ -138,6 +142,43 @@ public class LedCubeController {
     }
 
     //public abstract boolean connect();
+
+    public void queue(byte[] buf)
+    {
+        if(buf != null)
+        {
+            queue.addLast(buf);
+            totalSizeInQueue += buf.length;
+        }
+    }
+
+    public void queue(int data)
+    {
+        byte[] buf = new byte[4];
+        for (int i = 0; i < buf.length; i++) {
+            buf[buf.length - i - 1] = (byte) data;
+            //Log.d("mytest", "" + buf[buf.length - i - 1]);
+            data = data >> 8;
+        }
+        queue(buf);
+    }
+
+    public void sendQueue() throws IOException
+    {
+        byte[] buf = new byte[totalSizeInQueue];
+        int i = 0;
+        for(byte[] bs : queue)
+        {
+            for(byte b : bs)
+            {
+                buf[i] = b;
+                i++;
+            }
+        }
+        send(buf);
+        queue.clear();
+        totalSizeInQueue = 0;
+    }
 
     /**
      * 替換輸出串流，供不同的裝置實作方式(ex. 藍牙)來呼叫以順利使用相同的方法來傳送命令與資料
