@@ -9,6 +9,8 @@ package ledcubeproject.models.ledcube;
  */
 public class LedCubeDataModel extends LedCubeStructure {
 
+    private LedCubeStructure previousFrame;
+
     private int[] insideBuffer;
     private int[] outputBuffer;
     private int currentUsedSize = 0;
@@ -25,6 +27,8 @@ public class LedCubeDataModel extends LedCubeStructure {
         super(sideLength);
         insideBuffer = new int[sideLength*sideLength*sideLength];
         //outputBuffer = new int[sideLength*sideLength*sideLength];
+        previousFrame = new LedCubeStructure(sideLength);
+        previousFrame.clear();
     }
 
     /**

@@ -10,12 +10,12 @@ public class LedCubeStructure {
     /**
      * 建立一個LED立方體的資料模型
      *
-     * @param n 用以建立n*n*n的方塊，若小於等於0則預設建立一個'1*1*1的方塊
+     * @param sideLength 用以建立n*n*n的方塊，若小於等於0則預設建立一個'1*1*1的方塊
      */
-    public LedCubeStructure(int n) {
-        if (n > 0)
-            sideLength = n;
-        structure = new int[n][n][n];
+    public LedCubeStructure(int sideLength) {
+        if (sideLength > 0)
+            this.sideLength = sideLength;
+        structure = new int[sideLength][sideLength][sideLength];
     }
 
     /**
