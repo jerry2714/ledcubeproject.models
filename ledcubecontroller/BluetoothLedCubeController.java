@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.Set;
 import java.util.UUID;
 
@@ -96,8 +97,13 @@ public class BluetoothLedCubeController extends LedCubeController {
         for (BluetoothDevice device : pairedDevices) {
             if (device.getName().equals(deviceName)) {
                 Log.d("mytest", "device found");
-                if (bluetoothSocket != null && bluetoothSocket.getRemoteDevice().equals(device))
-                    return true;
+                if (bluetoothSocket != null)
+                {
+                    if(bluetoothSocket.getRemoteDevice().equals(device))
+                        return true;
+                    else
+                        disconnect();
+                }
                 bluetoothSocket = establishSocket(device);
                 break;
             }
@@ -147,6 +153,17 @@ public class BluetoothLedCubeController extends LedCubeController {
             }
         }
         return false;
+    }
+
+    public void disconnect()
+    {
+        if(bluetoothSocket != null)
+            try {
+                bluetoothSocket.close();
+                bluetoothSocket = null;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
     public boolean isConnected()

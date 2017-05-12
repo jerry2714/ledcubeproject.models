@@ -43,8 +43,77 @@ public class LedCubeController {
     private OutputStream outputStream = null;
     private InputStream inputStream = null;
 
-    private ArrayDeque<byte[]> queue = new ArrayDeque<>();
+    private ArrayDeque<byte[]> transferQueue = new ArrayDeque<>();
     private int totalSizeInQueue = 0;
+    private int availableTransferSize = 63;
+
+    /**
+     * 標記目前有沒有CommunicationThread正在執行中，用以避免同時有兩個CommunicatoinThread在執行的狀況
+     */
+    private boolean communicating = false;
+
+    class CommunicationThread extends Thread
+    {
+        byte[] buf = null;
+        byte[] s = new byte[1];
+        int transferSize = 0;
+        CommunicationThread(byte[] buf)
+        {
+            this.buf = buf;
+        }
+        @Override
+        public void run() {
+            long time = 0;
+            communicating = true;
+            int offset = 0;
+//            try {
+//                while (offset < buf.length) {
+//                    if(availableTransferSize <= 0)
+//                        while (inputStream.available() <= 0);
+//                    time = System.nanoTime();
+//                    while (inputStream.available() > 0) {
+//                        availableTransferSize += inputStream.read();
+//                    }
+//                    time = System.nanoTime() - time;
+//                    // System.out.println("wait: "+time);
+//                    if(availableTransferSize < 0)
+//                        availableTransferSize = 0;
+//                    if(offset + availableTransferSize > buf.length)     //可傳量超過剩餘量
+//                        transferSize = buf.length - offset;
+//                    else transferSize = availableTransferSize;
+//                    System.out.println("send: "+transferSize + "bytes");
+//                    outputStream.write(buf, offset, transferSize);
+//                    /*for(int j = 0; j < availableTransferSize; j++)
+//                        System.out.println(buf[i+j]);*/
+//                    offset = offset + transferSize;
+//                    availableTransferSize -= transferSize;
+//                }
+//            }catch (IOException e)
+//            {
+//                e.printStackTrace();
+//                return;
+//            }
+//            communicating = false;
+            try {
+                while(offset < buf.length)
+                {
+                    //time = System.nanoTime();
+                    if(offset + availableTransferSize > buf.length)
+                        transferSize = buf.length - offset;
+                    else transferSize = availableTransferSize;
+                    outputStream.write(buf, offset, transferSize);
+                    //while(System.nanoTime() - time < (1000000000 / 50000));
+                    //time = System.nanoTime();
+                    offset += availableTransferSize;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
+            }
+            communicating = false;
+        }
+    }
+
 
     public LedCubeController()
     {
@@ -84,35 +153,6 @@ public class LedCubeController {
     }
 
     /**
-     * 簡單包裝"中斷"命令
-     * @throws IOException
-     */
-    public void interrupt() throws IOException
-    {
-        sendCommand(INTERRUPT, 0, 0);
-    }
-
-    /**
-     * 簡單包裝"延時"命令
-     * @param microsec  延多少微秒
-     * @throws IOException
-     */
-    public void delay(int microsec) throws IOException
-    {
-        sendCommand(DELAY, 0, microsec);
-    }
-
-    /**
-     * 簡單包裝"送出"命令
-     * @throws IOException
-     */
-    public void show() throws IOException
-    {
-        sendCommand(OUTPUT, 0, 0);
-    }
-
-
-    /**
      * 對已連線的裝置送出一組資料
      * @param buf
      * @throws IOException
@@ -120,10 +160,6 @@ public class LedCubeController {
     public void send(byte[] buf) throws IOException {
         outputStream.write(buf);
         //Log.d("mytest", "send");
-    }
-
-    public void send(byte b) throws  IOException{
-        outputStream.write(b);
     }
 
     /**
@@ -141,33 +177,37 @@ public class LedCubeController {
         send(buf);
     }
 
+
+
     //public abstract boolean connect();
 
-    public void queue(byte[] buf)
+    public void addToQueue(byte[] buf)
     {
         if(buf != null)
         {
-            queue.addLast(buf);
+            transferQueue.addLast(buf);
             totalSizeInQueue += buf.length;
         }
     }
 
-    public void queue(int data)
+    public void addToQueue(int data)
     {
         byte[] buf = new byte[4];
         for (int i = 0; i < buf.length; i++) {
             buf[buf.length - i - 1] = (byte) data;
-            //Log.d("mytest", "" + buf[buf.length - i - 1]);
             data = data >> 8;
         }
-        queue(buf);
+        /*for(byte b : buf)
+            System.out.print(b+" ");
+        System.out.println();*/
+        addToQueue(buf);
     }
 
     public void sendQueue() throws IOException
     {
         byte[] buf = new byte[totalSizeInQueue];
         int i = 0;
-        for(byte[] bs : queue)
+        for(byte[] bs : transferQueue)
         {
             for(byte b : bs)
             {
@@ -176,8 +216,46 @@ public class LedCubeController {
             }
         }
         send(buf);
-        queue.clear();
+        transferQueue.clear();
         totalSizeInQueue = 0;
+    }
+
+    public boolean startTransmission()
+    {
+        if(communicating)
+            return false;
+        byte[] buf = new byte[totalSizeInQueue];
+        int i = 0;
+        for(byte[] bs : transferQueue)
+        {
+            for(byte b : bs)
+            {
+                buf[i] = b;
+                i++;
+            }
+        }
+        transferQueue.clear();
+        totalSizeInQueue = 0;
+        CommunicationThread ct = new CommunicationThread(buf);
+        communicating = true;
+        ct.setPriority(10);
+        ct.start();
+        return true;
+    }
+
+    public boolean isCommunicating()
+    {
+        return communicating;
+    }
+
+    public InputStream getInputStream()
+    {
+        return inputStream;
+    }
+
+    public int read() throws IOException
+    {
+        return inputStream.read();
     }
 
     /**
