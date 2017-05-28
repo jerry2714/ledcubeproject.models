@@ -14,7 +14,8 @@ public class Mp3Decoder implements MusicDecoder {
     private Decoder decoder;
     private boolean ready = false;
 
-	
+	public Mp3Decoder(){}
+
     public Mp3Decoder(String fileName)
     {
             if (fileName != null)
@@ -68,4 +69,5 @@ public class Mp3Decoder implements MusicDecoder {
 
     public int getSampleRate(){return decoder.getOutputFrequency();}
 
+    public Decoder getDecoder(){return decoder;}
 }

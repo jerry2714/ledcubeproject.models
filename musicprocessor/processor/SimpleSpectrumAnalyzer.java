@@ -1,6 +1,7 @@
 package ledcubeproject.models.musicprocessor.processor;
 
-import org.jtransforms.fft.*;
+
+import org.jtransforms.fft.DoubleFFT_1D;
 
 import static java.lang.Math.cos;
 import static java.lang.Math.sqrt;
