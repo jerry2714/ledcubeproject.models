@@ -56,6 +56,13 @@ public class Mp3Decoder implements MusicDecoder {
         return pcm;
     }
 
+    public boolean skipFrame() throws BitstreamException {
+        Header h = bitstream.readFrame();
+        if (h == null) return false;
+        bitstream.closeFrame();
+        return true;
+    }
+
     /**
      * 將音訊裝置和decoder連結在一起
      * @param audev  欲連結的音訊裝置

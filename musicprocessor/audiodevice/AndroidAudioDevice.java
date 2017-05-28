@@ -29,6 +29,19 @@ public class AndroidAudioDevice extends AudioDeviceBase{
         audioTrack.write(b, 0, len*2);
     }
 
+    public synchronized void open(Decoder decoder) throws JavaLayerException {
+        if(getDecoder() != decoder)
+        {
+            if(audioTrack != null)
+            {
+                audioTrack.pause();
+                audioTrack.flush();
+            }
+            audioTrack = null;
+        }
+        super.open(decoder);
+    }
+
     protected void openImpl()
     {
         if(audioTrack != null)

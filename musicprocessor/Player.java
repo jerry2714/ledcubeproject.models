@@ -49,33 +49,38 @@ public class Player{
 
     /**
      * 一個簡單的播放功能，呼叫後會把一首音樂播完，播完後才會return，會占用執行緒
+     * @return  0代表檔案播放完畢，-1代表錯誤
      */
-    public void play()
+    public int play()
     {
         if(audev == null || mp3Decoder == null)
-            return;
+            return -1;
         try {
             audev.open(mp3Decoder.getDecoder());
             pause = false;
         } catch (JavaLayerException e) {
             e.printStackTrace();
             pause = true;
-            return;
+            return -1;
         }
         try {
-            int max = Integer.MAX_VALUE;
+            //int max = Integer.MAX_VALUE;
 
-            while (max-- > 0 && !pause) {
+            while (/*max-- > 0 &&*/ !pause) {
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm == null)
-                    break;
+                {
+                    pause = true;
+                    return 0;
+                }
                 audev.write(pcm, 0, pcm.length);
             }
-        }catch (Exception e){
+        }catch (JavaLayerException e){
             e.printStackTrace();
             pause = true;
+            return  -1;
         }
-        pause = true;
+        return 5;
     }
 
     /**
