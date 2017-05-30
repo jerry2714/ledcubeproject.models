@@ -52,7 +52,7 @@ public class Mp3Decoder implements MusicDecoder {
             if(h == null) return null;
             pcm =  ((SampleBuffer)decoder.decodeFrame(h, bitstream)).getBuffer();
             bitstream.closeFrame();
-        }catch (Exception e){System.out.println("Exception decoding audio frame");}
+        }catch (Exception e){e.printStackTrace();}
         return pcm;
     }
 
@@ -62,6 +62,17 @@ public class Mp3Decoder implements MusicDecoder {
         bitstream.closeFrame();
         return true;
     }
+
+//    public void turnBackFrame(int num)
+//    {
+//        for(int i = 0; i < num; i++)
+//            try {
+//                bitstream.unreadFrame();
+//            } catch (BitstreamException e) {
+//                e.printStackTrace();
+//                return;
+//            }
+//    }
 
     /**
      * 將音訊裝置和decoder連結在一起
