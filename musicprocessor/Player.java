@@ -1,5 +1,8 @@
 package ledcubeproject.models.musicprocessor;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+
 import javazoom.jl.decoder.JavaLayerException;
 import ledcubeproject.models.musicprocessor.audiodevice.AndroidAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
@@ -20,7 +23,8 @@ public class Player{
     private int sampleRate;
     private boolean pause = true;
 
-
+    private ArrayList<short[]> playBack = new ArrayList<>();
+    private ArrayList<short[]> temp = new ArrayList<>();
     private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
 
     public Player(AudioDevice ad)
@@ -44,6 +48,7 @@ public class Player{
             mp3Decoder = new Mp3Decoder(fileName);
             mp3Decoder.bindAudioDevice(audev);
             sampleRate = 0;
+            playBack.clear();
         }catch (Exception e){}
     }
 
@@ -74,6 +79,7 @@ public class Player{
                     return 0;
                 }
                 audev.write(pcm, 0, pcm.length);
+                playBack.add(pcm);
             }
         }catch (JavaLayerException e){
             e.printStackTrace();
@@ -83,6 +89,18 @@ public class Player{
         return 5;
     }
 
+    public int playFrames(int start, int length)
+    {
+        temp.clear();
+        pause = false;
+        int n = playBack.size();
+        if(start-1 > n)
+        {
+            //int l = length
+        }
+        return 0;
+    }
+
     /**
      * 暫停播放
      */
@@ -90,6 +108,11 @@ public class Player{
     {
         pause = true;
         audev.close();
+    }
+
+    public void turnBack(int num)
+    {
+       // mp3Decoder.turnBackFrame(num);
     }
 
     /**
@@ -172,6 +195,7 @@ public class Player{
             for()
         }*/
     }
+
 
 }
 
