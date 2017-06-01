@@ -4,13 +4,15 @@ package ledcubeproject.models.musicprocessor;
  * Created by Jerry on 2017/5/30.
  */
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 
 /**
  * 用來儲存一段已解碼成PCM data的音樂資料
  * @param <E>
  */
-class MusicSegment<E>
+class MusicSegment<E> implements Comparable<MusicSegment>
 {
     private ArrayList<E> segment;
     private int start, length;
@@ -29,10 +31,31 @@ class MusicSegment<E>
      */
     public boolean checkInside(int pos)
     {
-        if(pos < start+length-1 && pos >= start)
+        if(pos <= start+length-1 && pos >= start)
+        {
+            // System.out.println(pos + " " + start + " " + (start+length-1) + " true");
             return true;
+        }
         else
+        {
+            // System.out.println(pos + " " + start + " " + (start+length-1) + " false");
             return false;
+        }
+    }
+
+    static private boolean mergeable(MusicSegment destination, MusicSegment source)
+    {
+        int sourceHead = source.getStartPosition();
+        if(destination.checkInside(sourceHead) || destination.checkInside(sourceHead-1))
+        {
+            //System.out.println("true");
+            return true;
+        }
+        else
+        {
+            //System.out.println("false");
+            return false;
+        }
     }
 
     /**
@@ -43,7 +66,7 @@ class MusicSegment<E>
      */
     static public boolean merge(MusicSegment destination, MusicSegment source)
     {
-        if(destination.checkInside(source.getStartPosition()))
+        if(mergeable(destination, source))
         {
             int startPoint = destination.getLength() + destination.getStartPosition();
             System.out.println(startPoint);
@@ -57,6 +80,7 @@ class MusicSegment<E>
                     src.remove(0);
                 }
                 des.addAll(src);
+                destination.updateLength();
             }
             return true;
         }
@@ -67,5 +91,12 @@ class MusicSegment<E>
 
     public int getLength(){return length;}
 
-    public ArrayList getList(){return segment;}
+    public ArrayList<E> getList(){return segment;}
+
+    public void updateLength(){length = segment.size();}
+
+    @Override
+    public int compareTo(@NonNull MusicSegment o) {
+        return this.getStartPosition() - o.getStartPosition();
+    }
 }
