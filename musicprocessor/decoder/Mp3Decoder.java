@@ -4,6 +4,8 @@ import javazoom.jl.decoder.*;
 import javazoom.jl.player.AudioDevice;
 
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PushbackInputStream;
 
 /**
  * Created by Jerry on 2017/1/25.
@@ -13,8 +15,16 @@ public class Mp3Decoder implements MusicDecoder {
     private Bitstream bitstream;
     private Decoder decoder;
     private boolean ready = false;
+    private String fileName = "";
+    private FileInputStream fin;
 
-	public Mp3Decoder(){}
+    private int currentPos; //下一次會被解碼的frame的位置
+    private int msPerFrame = 0;    //每個frame佔多少millisecond
+	public Mp3Decoder()
+    {
+        fileName = "";
+        currentPos = 0;
+    }
 
     public Mp3Decoder(String fileName)
     {
@@ -28,38 +38,87 @@ public class Mp3Decoder implements MusicDecoder {
      */
     public void init(String fileName)
     {
+        ready = false;
+        msPerFrame = 0;
         try {
             if (fileName != null) {
-                FileInputStream fin = new FileInputStream(fileName);
-                //BufferedInputStream bin = new BufferedInputStream(fin);
+                this.fileName = fileName;
+                fin = new FileInputStream(fileName);
+                //bin = new BufferedInputStream(fin);
+                //bin.reset();
                 bitstream = new Bitstream(fin);
                 decoder = new Decoder();
             }
             ready = true;
+            short[] pcm = null;
+            pcm  = decodeFrame();
+           msPerFrame = pcm.length*1000 / (decoder.getOutputChannels() * decoder.getOutputFrequency());
+           System.out.println("msPerFrame = "+ msPerFrame);
         }catch (Exception e)
         {
-            System.out.println(e.toString());
+            e.printStackTrace();
         }
     }
 
-
+    /**
+     * 解碼一個frame。
+    * <p>若要指定解碼特定位置的的frame，請先呼叫 {@link #changePosition(int pos)}。若已經沒有frame可以被解碼，則會跳回檔案的開頭位置
+     * @return 解碼出的 pcm data，若為null則表示最後一個frame已經被解碼完了
+     */
     public short[] decodeFrame()
     {
         if(!ready) return null;
         short pcm[] = null;
         try {
             Header h = bitstream.readFrame();
-            if(h == null) return null;
+            if(h == null){
+                refresh();
+                return null;
+            }
             pcm =  ((SampleBuffer)decoder.decodeFrame(h, bitstream)).getBuffer();
+            currentPos++;
             bitstream.closeFrame();
         }catch (Exception e){e.printStackTrace();}
         return pcm;
     }
 
-    public boolean skipFrame() throws BitstreamException {
+    /**
+     * 變更下一個可以被解碼的frame的位置
+     * @param pos 欲換到的位置
+     */
+    public void changePosition(int pos)
+    {
+        try {
+            if(pos < currentPos)
+                refresh();
+            else
+                while(currentPos < pos)
+                    if(!skipFrame()) break;
+            } catch (BitstreamException e) {
+                e.printStackTrace();
+            }
+    }
+
+    private void refresh()
+    {
+        if(fileName != null && !fileName.equals(""))
+        {
+            try {
+                fin.getChannel().position(0);
+                bitstream = new Bitstream(fin);
+                decoder = new Decoder();
+                currentPos = 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean skipFrame() throws BitstreamException {
         Header h = bitstream.readFrame();
         if (h == null) return false;
         bitstream.closeFrame();
+        currentPos++;
         return true;
     }
 
@@ -88,4 +147,6 @@ public class Mp3Decoder implements MusicDecoder {
     public int getSampleRate(){return decoder.getOutputFrequency();}
 
     public Decoder getDecoder(){return decoder;}
+
+
 }
