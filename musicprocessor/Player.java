@@ -4,10 +4,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.player.FactoryRegistry;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
 import ledcubeproject.models.musicprocessor.processor.SimpleSpectrumAnalyzer;
 import javazoom.jl.player.AudioDevice;
-import ledcubeproject.musicplayer.Music;
+
 
 /**
  * Created by Jerry on 2017/2/1.
@@ -21,12 +22,18 @@ public class Player{
 
     private int sampleRate;
     private boolean pause = true;
-    private int currentPos = 0;
+    private int currentPos = 0; //下一個要播放的frame的位置
 
     private MusicSegment<short[]> playback;     //正要使用的PCM data segment
     private ArrayList<MusicSegment> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
 
     private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
+
+    public static void main(String args[]) throws JavaLayerException {
+        Player player = new Player(FactoryRegistry.systemRegistry().createAudioDevice(), args[0]);
+        player.setPosition(10000);
+        player.play();
+    }
 
     public Player(AudioDevice ad)
     {
@@ -75,15 +82,15 @@ public class Player{
         }
         try {
             //找尋要播放的開頭位置是否已經解碼過
-            playback = null;
+            /*playback = null;
             for(MusicSegment s : segmentList)
             {
                 if(s.checkInside(currentPos))
                 {
                     playback = s;
                 }
-            }
-            ArrayList<short[]> record;
+            }*/
+           /* ArrayList<short[]> record;
             if(playback == null)
             {
                 record = new ArrayList<>();
@@ -91,14 +98,14 @@ public class Player{
                 segmentList.add(playback);
             }
             else
-                record = playback.getList();
+                record = playback.getList();*/
             while (!pause) {
-                for(int i = 0; i < record.size() && !pause; i++)
+               /* for(int i = 0; i < record.size() && !pause; i++)
                 {
                     pcm = record.get(i);
                     audev.write(pcm, 0, pcm.length);
                     currentPos++;
-                }
+                }*/
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm == null)
                 {
@@ -107,11 +114,11 @@ public class Player{
                     break;
                 }
                 audev.write(pcm, 0, pcm.length);
-                record.add(pcm);
+               // record.add(pcm);
                 currentPos++;
                 ret = 1;
             }
-            playback.updateLength();
+            //playback.updateLength();
             return ret;
         }catch (JavaLayerException e){
             e.printStackTrace();
@@ -123,6 +130,7 @@ public class Player{
     public void setPosition(int pos)
     {
         pause();
+        mp3Decoder.changePosition(pos);
         currentPos = pos;
     }
 
@@ -174,11 +182,6 @@ public class Player{
     {
         pause = true;
         audev.close();
-    }
-
-    public void turnBack(int num)
-    {
-       // mp3Decoder.turnBackFrame(num);
     }
 
     /**
