@@ -76,6 +76,10 @@ public class Mp3Decoder implements MusicDecoder {
                 return null;
             }
             pcm =  ((SampleBuffer)decoder.decodeFrame(h, bitstream)).getBuffer();
+            short[] p = new short[pcm.length];
+            for(int i = 0; i < pcm.length; i++)
+                p[i] = pcm[i];
+            pcm = p;
             currentPos++;
             bitstream.closeFrame();
         }catch (Exception e){e.printStackTrace();}
@@ -108,6 +112,7 @@ public class Mp3Decoder implements MusicDecoder {
                 bitstream = new Bitstream(fin);
                 decoder = new Decoder();
                 currentPos = 0;
+                System.out.println("refresh");
             } catch (Exception e) {
                 e.printStackTrace();
             }
