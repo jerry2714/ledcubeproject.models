@@ -25,14 +25,21 @@ public class Player{
     private int currentPos = 0; //下一個要播放的frame的位置
 
     private MusicSegment<short[]> playback;     //正要使用的PCM data segment
-    private ArrayList<MusicSegment> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
+    private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
 
     private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
 
     public static void main(String args[]) throws JavaLayerException {
         Player player = new Player(FactoryRegistry.systemRegistry().createAudioDevice(), args[0]);
-        player.setPosition(10000);
-        player.play();
+        //player.setPosition(10000);
+        //player.play();
+        int count = 0;
+        while(player.playFrame(count))
+        {
+            count++;
+            if(count == 100) count = 0;
+        }
+       //player.test();
     }
 
     public Player(AudioDevice ad)
@@ -57,7 +64,7 @@ public class Player{
             mp3Decoder.bindAudioDevice(audev);
             sampleRate = 0;
             currentPos = 0;
-            playback = null;
+            playback = new MusicSegment<>(0);
             segmentList.clear();
 
         }catch (Exception e){}
@@ -134,46 +141,89 @@ public class Player{
         currentPos = pos;
     }
 
-//    public int playFrames(int start, int length)
-//    {
-//        pause = false;
-//        playback = null;
-//        for(MusicSegment s : segmentList)
-//        {
-//            if(s.checkInside(start))
-//            {
-//                playback = s.getList();
-//                int len = length <= playback.size() ? length : playback.size();
-//                int offset = start - s.getStartPosition();
-//                for(int i = offset; i < offset + len; i++)
-//                {
-//                    pcm = playback.get(i);
-//                    try {
-//                        audev.write(pcm, 0, pcm.length);
-//                    } catch (JavaLayerException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-//                while(len <= length && !pause)
-//                {
-//                    pcm = mp3Decoder.decodeFrame();
-//                    if(pcm == null)
-//                    {
-//                        pause = true;
-//                        return 0;
-//                    }
-//                    try {
-//                        audev.write(pcm, 0, pcm.length);
-//                    } catch (JavaLayerException e) {
-//                        e.printStackTrace();
-//                    }
-//                    playback.add(pcm);
-//                }
-//
-//            }
-//        }
-//        return 0;
-//    }
+    public boolean playFrame(int pos)
+    {
+        pause = false;
+        pcm = null;
+
+        for(int i = 0; true; i++)
+        {
+            if(playback != null && playback.checkInside(pos))
+            {
+                int p = pos - playback.getStartPosition();
+                pcm = playback.get(p);
+                System.out.println("found " + p);
+                break;
+            }
+            else if( !(i < segmentList.size()) )
+                break;
+            else
+            {
+                playback = segmentList.get(i);
+                System.out.println("next");
+            }
+
+        }
+        if(pcm == null)
+        {
+            System.out.println("null");
+            mp3Decoder.changePosition(pos);
+            pcm = mp3Decoder.decodeFrame();
+            if(pcm == null)
+                return false;
+            if(!playback.add(pcm, pos))
+            {
+                System.out.println("add fault" + pos);
+                if(playback.size() > 0)
+                {
+                    segmentList.add(playback);
+                    System.out.println("add into list");
+                }
+                playback = new MusicSegment<>(pos);
+                System.out.println(playback.add(pcm, pos));
+
+            }
+            else
+            {
+                System.out.println("add " + pos);
+            }
+
+        }
+        try {
+            audev.write(pcm, 0, pcm.length);
+            currentPos = pos + 1;
+        } catch (JavaLayerException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    public void test()
+    {
+        ArrayList<short[]> list = new ArrayList<>();
+        for(int i = 0; i < 100; i++)
+        {
+            pcm = mp3Decoder.decodeFrame();
+            System.out.println(pcm.length);
+            try {
+                audev.write(pcm, 0, pcm.length);
+            } catch (JavaLayerException e) {
+                e.printStackTrace();
+            }
+            currentPos++;
+            short[] p = new short[pcm.length];
+            for(int j = 0; j < pcm.length; j++)
+                p[j] = pcm[j];
+            list.add(p);
+        }
+        for(short[] p : list)
+            try {
+                audev.write(p, 0, p.length);
+            } catch (JavaLayerException e) {
+                e.printStackTrace();
+            }
+    }
 
     /**
      * 暫停播放
@@ -218,23 +268,23 @@ public class Player{
         return getCurrentSpectrum();
     }
 
-    public void updatePlayback()
-    {
-        int num = segmentList.size();
-        Collections.sort(segmentList);
-        for(int i = 0; i < num; i++)
-        {
-            MusicSegment seg1 = segmentList.get(i);
-            MusicSegment seg2 = segmentList.get(i+1);
-            if(MusicSegment.merge(seg1, seg2))
-            {
-                segmentList.remove(i+1);
-                i--;
-                num--;
-            }
-        }
-
-    }
+//    public void updatePlayback()
+//    {
+//        int num = segmentList.size();
+//        Collections.sort(segmentList);
+//        for(int i = 0; i < num; i++)
+//        {
+//            MusicSegment seg1 = segmentList.get(i);
+//            MusicSegment seg2 = segmentList.get(i+1);
+//            if(MusicSegment.merge(seg1, seg2))
+//            {
+//                segmentList.remove(i+1);
+//                i--;
+//                num--;
+//            }
+//        }
+//
+//    }
 
     public int[] getCurrentSpectrum()
     {
