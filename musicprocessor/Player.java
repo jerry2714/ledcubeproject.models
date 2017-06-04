@@ -5,6 +5,7 @@ import java.util.Collections;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.FactoryRegistry;
+import javazoom.jl.player.JavaSoundAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
 import ledcubeproject.models.musicprocessor.processor.SimpleSpectrumAnalyzer;
 import javazoom.jl.player.AudioDevice;
@@ -30,16 +31,27 @@ public class Player{
     private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
 
     public static void main(String args[]) throws JavaLayerException {
-        Player player = new Player(FactoryRegistry.systemRegistry().createAudioDevice(), args[0]);
+        Player player = new Player(new JavaSoundAudioDevice(), args[0]);
         //player.setPosition(10000);
+        Thread n = new Thread(){
+            public void run()
+            {
+                player.play();
+            }
+        }; n.start();
         //player.play();
-        int count = 0;
-        while(player.playFrame(count))
-        {
-            count++;
-            if(count == 100) count = 0;
-        }
-       //player.test();
+        long s = System.nanoTime();
+        while(System.nanoTime() - s < 1000000000/1);
+        player.pause();
+        player.play();
+        /*int count = 0;
+        for(int i = 0; i < 100; i++)
+            player.playFrame(i);
+        for(int i = 50; i < 300; i++)
+            player.playFrame(i);
+        for(int i = 0; i < 300; i++)
+            player.playFrame(i);
+       //player.test();*/
     }
 
     public Player(AudioDevice ad)
@@ -77,10 +89,12 @@ public class Player{
     public int play()
     {
         int ret = -1;
+        pause = false;
         if(audev == null || mp3Decoder == null)
             return ret;
         try {
             audev.open(mp3Decoder.getDecoder());
+            System.out.println("open");
             pause = false;
         } catch (JavaLayerException e) {
             e.printStackTrace();
@@ -88,31 +102,9 @@ public class Player{
             return ret;
         }
         try {
-            //找尋要播放的開頭位置是否已經解碼過
-            /*playback = null;
-            for(MusicSegment s : segmentList)
-            {
-                if(s.checkInside(currentPos))
-                {
-                    playback = s;
-                }
-            }*/
-           /* ArrayList<short[]> record;
-            if(playback == null)
-            {
-                record = new ArrayList<>();
-                playback = new MusicSegment<>(record, currentPos, 0);
-                segmentList.add(playback);
-            }
-            else
-                record = playback.getList();*/
+
             while (!pause) {
-               /* for(int i = 0; i < record.size() && !pause; i++)
-                {
-                    pcm = record.get(i);
-                    audev.write(pcm, 0, pcm.length);
-                    currentPos++;
-                }*/
+
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm == null)
                 {
@@ -145,50 +137,61 @@ public class Player{
     {
         pause = false;
         pcm = null;
-
-        for(int i = 0; true; i++)
+        MusicSegment<short[]> temp = playback;
+        mp3Decoder.changePosition(pos);
+        if(playback != null && playback.checkInside(pos))
         {
-            if(playback != null && playback.checkInside(pos))
-            {
-                int p = pos - playback.getStartPosition();
-                pcm = playback.get(p);
-                System.out.println("found " + p);
-                break;
-            }
-            else if( !(i < segmentList.size()) )
-                break;
-            else
-            {
-                playback = segmentList.get(i);
-                System.out.println("next");
-            }
-
+            int p = pos - playback.getStartPosition();
+            pcm = playback.get(p);
+            if(playback.size() - p < 3) //在本段已解碼過的資料播放完之前提早開始解碼，若不提前則會有一個小小的不連貫，原因不明
+                mp3Decoder.decodeFrame();
+            //System.out.println("found " + pos);
         }
+//        for(int i = 0; true; i++)
+//        {
+//            if(playback != null && playback.checkInside(pos))
+//            {
+//                int p = pos - playback.getStartPosition();
+//                pcm = playback.get(p);
+//                //System.out.println("found " + p);
+//                break;
+//            }
+//            else if( !(i < segmentList.size()) )
+//                break;
+//            else
+//            {
+//                playback = segmentList.get(i);
+//                //System.out.println("next");
+//            }
+//
+//        }
         if(pcm == null)
         {
-            System.out.println("null");
-            mp3Decoder.changePosition(pos);
+            playback = temp;
             pcm = mp3Decoder.decodeFrame();
             if(pcm == null)
                 return false;
             if(!playback.add(pcm, pos))
             {
-                System.out.println("add fault" + pos);
-                if(playback.size() > 0)
+                if(playback.size() > 0 && !segmentList.contains(playback))
                 {
                     segmentList.add(playback);
-                    System.out.println("add into list");
+                    playback = null;
                 }
-                playback = new MusicSegment<>(pos);
-                System.out.println(playback.add(pcm, pos));
-
+                for(MusicSegment<short[]> s : segmentList)
+                {
+                    if(s.checkInside(pos) || s.add(pcm, pos))
+                        playback = s;
+                }
+                if(playback == null)
+                {
+                    playback = new MusicSegment<>(pos);
+                    playback.add(pcm, pos);
+                }
+                //System.out.println(playback.add(pcm, pos));
             }
-            else
-            {
-                System.out.println("add " + pos);
-            }
-
         }
+
         try {
             audev.write(pcm, 0, pcm.length);
             currentPos = pos + 1;
