@@ -40,6 +40,7 @@ public class Mp3Decoder implements MusicDecoder {
     {
         ready = false;
         msPerFrame = 0;
+        currentPos = 0;
         try {
             if (fileName != null) {
                 this.fileName = fileName;
@@ -54,6 +55,7 @@ public class Mp3Decoder implements MusicDecoder {
             pcm  = decodeFrame();
            msPerFrame = pcm.length*1000 / (decoder.getOutputChannels() * decoder.getOutputFrequency());
            System.out.println("msPerFrame = "+ msPerFrame);
+           refresh();
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -90,17 +92,17 @@ public class Mp3Decoder implements MusicDecoder {
      * 變更下一個可以被解碼的frame的位置
      * @param pos 欲換到的位置
      */
-    public void changePosition(int pos)
+    public int changePosition(int pos)
     {
         try {
             if(pos < currentPos)
                 refresh();
-            else
-                while(currentPos < pos)
-                    if(!skipFrame()) break;
+            while(currentPos < pos)
+                if(!skipFrame()) break;
             } catch (BitstreamException e) {
                 e.printStackTrace();
             }
+        return currentPos;
     }
 
     private void refresh()
@@ -149,6 +151,10 @@ public class Mp3Decoder implements MusicDecoder {
             audev.open(decoder);
     }
 
+    /**
+     * 取得採樣頻率
+     * @return  採樣頻率
+     */
     public int getSampleRate(){return decoder.getOutputFrequency();}
 
     public Decoder getDecoder(){return decoder;}
