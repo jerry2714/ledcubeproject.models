@@ -23,11 +23,13 @@ public class Player{
     private int sampleRate;
     private boolean pause = true;
     private int currentPos = 0; //下一個要播放的frame的位置
+    private int offset = 5;     //
 
     private Runnable playingAction = null;
 
 
-    private MusicSegment<short[]> playback;     //正要使用的PCM data segment
+    //private MusicSegment<short[]> playback;     //正要使用的PCM data segment
+    private short[][] playback;
     private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
 
     private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
@@ -70,7 +72,7 @@ public class Player{
             mp3Decoder.bindAudioDevice(audev);
             sampleRate = 0;
             currentPos = 0;
-            playback = new MusicSegment<>(0);
+            playback = new short[(mp3Decoder.getDuration()/mp3Decoder.getMsPerFrame() +1)][];
             segmentList.clear();
 
         }catch (Exception e){}
@@ -99,12 +101,16 @@ public class Player{
             while (!pause) {
                 if(playingAction != null)
                     (new Thread(playingAction)).start();
-                mp3Decoder.changePosition(currentPos);
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm == null)
                 {
                     pause = true;
                     audev.flush();
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     ret = 0;
                     break;
                 }
@@ -112,7 +118,6 @@ public class Player{
                 currentPos++;
                 ret = 1;
             }
-            //playback.updateLength();
             return ret;
         }catch (JavaLayerException e){
             e.printStackTrace();
@@ -128,74 +133,74 @@ public class Player{
         currentPos = pos;
     }
 
-    public boolean playFrame(int pos)
-    {
-        pause = false;
-        pcm = null;
-        MusicSegment<short[]> temp = playback;
-        mp3Decoder.changePosition(pos);
-        if(playback != null && playback.checkInside(pos))
-        {
-            int p = pos - playback.getStartPosition();
-            pcm = playback.get(p);
-            if(playback.size() - p < 3) //在本段已解碼過的資料播放完之前提早開始解碼，若不提前則會有一個小小的不連貫，原因不明
-                mp3Decoder.decodeFrame();
-            //System.out.println("found " + pos);
-        }
-//        for(int i = 0; true; i++)
+//    public boolean playFrame(int pos)
+//    {
+//        pause = false;
+//        pcm = null;
+//        MusicSegment<short[]> temp = playback;
+//        mp3Decoder.changePosition(pos);
+//        if(playback != null && playback.checkInside(pos))
 //        {
-//            if(playback != null && playback.checkInside(pos))
-//            {
-//                int p = pos - playback.getStartPosition();
-//                pcm = playback.get(p);
-//                //System.out.println("found " + p);
-//                break;
-//            }
-//            else if( !(i < segmentList.size()) )
-//                break;
-//            else
-//            {
-//                playback = segmentList.get(i);
-//                //System.out.println("next");
-//            }
-//
+//            int p = pos - playback.getStartPosition();
+//            pcm = playback.get(p);
+//            if(playback.size() - p < 3) //在本段已解碼過的資料播放完之前提早開始解碼，若不提前則會有一個小小的不連貫，原因不明
+//                mp3Decoder.decodeFrame();
+//            //System.out.println("found " + pos);
 //        }
-        if(pcm == null)
-        {
-            playback = temp;
-            pcm = mp3Decoder.decodeFrame();
-            if(pcm == null)
-                return false;
-            if(!playback.add(pcm, pos))
-            {
-                if(playback.size() > 0 && !segmentList.contains(playback))
-                {
-                    segmentList.add(playback);
-                    playback = null;
-                }
-                for(MusicSegment<short[]> s : segmentList)
-                {
-                    if(s.checkInside(pos) || s.add(pcm, pos))
-                        playback = s;
-                }
-                if(playback == null)
-                {
-                    playback = new MusicSegment<>(pos);
-                    playback.add(pcm, pos);
-                }
-                //System.out.println(playback.add(pcm, pos));
-            }
-        }
-
-        try {
-            audev.write(pcm, 0, pcm.length);
-            currentPos = pos + 1;
-        } catch (JavaLayerException e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
+////        for(int i = 0; true; i++)
+////        {
+////            if(playback != null && playback.checkInside(pos))
+////            {
+////                int p = pos - playback.getStartPosition();
+////                pcm = playback.get(p);
+////                //System.out.println("found " + p);
+////                break;
+////            }
+////            else if( !(i < segmentList.size()) )
+////                break;
+////            else
+////            {
+////                playback = segmentList.get(i);
+////                //System.out.println("next");
+////            }
+////
+////        }
+//        if(pcm == null)
+//        {
+//            playback = temp;
+//            pcm = mp3Decoder.decodeFrame();
+//            if(pcm == null)
+//                return false;
+//            if(!playback.add(pcm, pos))
+//            {
+//                if(playback.size() > 0 && !segmentList.contains(playback))
+//                {
+//                    segmentList.add(playback);
+//                    playback = null;
+//                }
+//                for(MusicSegment<short[]> s : segmentList)
+//                {
+//                    if(s.checkInside(pos) || s.add(pcm, pos))
+//                        playback = s;
+//                }
+//                if(playback == null)
+//                {
+//                    playback = new MusicSegment<>(pos);
+//                    playback.add(pcm, pos);
+//                }
+//                //System.out.println(playback.add(pcm, pos));
+//            }
+//        }
+//
+//        try {
+//            audev.write(pcm, 0, pcm.length);
+//            currentPos = pos + 1;
+//        } catch (JavaLayerException e) {
+//            e.printStackTrace();
+//            return false;
+//        }
+//        return true;
+//    }
 
     public void test()
     {
@@ -344,7 +349,7 @@ public class Player{
      * 取得目前音樂檔的全長
      * @return  單位為毫秒
      */
-    public int getDuration(){return mp3Decoder.getDuratoin();}
+    public int getDuration(){return mp3Decoder.getDuration();}
 
     /**
      * 取得目前音樂檔的全長
