@@ -187,5 +187,5 @@ public class Mp3Decoder implements MusicDecoder {
      * 取得目前音樂檔的全長
      * @return  單位為毫秒
      */
-    public int getDuratoin(){return duratoin;}
+    public int getDuration(){return duratoin;}
 }

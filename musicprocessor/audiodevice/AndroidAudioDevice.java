@@ -57,15 +57,16 @@ public class AndroidAudioDevice extends AudioDeviceBase{
     protected void flushImpl()
     {
         int state;
+        if(audioTrack == null) return;
         while(true)
         {
             state = audioTrack.getState();
-            if(state == audioTrack.PLAYSTATE_STOPPED)
+            if(state == AudioTrack.PLAYSTATE_STOPPED)
             {
                 //System.out.println("STOP");
                 return;
             }
-            else if(state == audioTrack.PLAYSTATE_PAUSED)
+            else if(state == AudioTrack.PLAYSTATE_PAUSED)
                 audioTrack.play();
         }
     }
