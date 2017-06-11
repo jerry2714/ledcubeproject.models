@@ -1,10 +1,8 @@
 package ledcubeproject.models.musicprocessor;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
 import javazoom.jl.decoder.JavaLayerException;
-import javazoom.jl.player.FactoryRegistry;
 import javazoom.jl.player.JavaSoundAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
 import ledcubeproject.models.musicprocessor.processor.SimpleSpectrumAnalyzer;
@@ -12,11 +10,12 @@ import javazoom.jl.player.AudioDevice;
 
 
 /**
+ * 簡易播放mp3播放器
  * Created by Jerry on 2017/2/1.
  */
 public class Player{
 
-    private Mp3Decoder mp3Decoder = null;
+    private Mp3Decoder mp3Decoder = new Mp3Decoder();
     private AudioDevice audev = null;
     private short pcm[];
     private double spectrum[];
@@ -25,13 +24,16 @@ public class Player{
     private boolean pause = true;
     private int currentPos = 0; //下一個要播放的frame的位置
 
+    private Runnable playingAction = null;
+
+
     private MusicSegment<short[]> playback;     //正要使用的PCM data segment
     private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
 
     private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
 
     public static void main(String args[]) throws JavaLayerException {
-        Player player = new Player(new JavaSoundAudioDevice(), args[0]);
+        final Player player = new Player(new JavaSoundAudioDevice(), args[0]);
         //player.setPosition(10000);
         Thread n = new Thread(){
             public void run()
@@ -44,14 +46,6 @@ public class Player{
         while(System.nanoTime() - s < 1000000000/1);
         player.pause();
         player.play();
-        /*int count = 0;
-        for(int i = 0; i < 100; i++)
-            player.playFrame(i);
-        for(int i = 50; i < 300; i++)
-            player.playFrame(i);
-        for(int i = 0; i < 300; i++)
-            player.playFrame(i);
-       //player.test();*/
     }
 
     public Player(AudioDevice ad)
@@ -72,7 +66,7 @@ public class Player{
     public void init(String fileName)
     {
         try {
-            mp3Decoder = new Mp3Decoder(fileName);
+            mp3Decoder.init(fileName);
             mp3Decoder.bindAudioDevice(audev);
             sampleRate = 0;
             currentPos = 0;
@@ -94,7 +88,6 @@ public class Player{
             return ret;
         try {
             audev.open(mp3Decoder.getDecoder());
-            System.out.println("open");
             pause = false;
         } catch (JavaLayerException e) {
             e.printStackTrace();
@@ -104,16 +97,18 @@ public class Player{
         try {
 
             while (!pause) {
-
+                if(playingAction != null)
+                    (new Thread(playingAction)).start();
+                mp3Decoder.changePosition(currentPos);
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm == null)
                 {
                     pause = true;
+                    audev.flush();
                     ret = 0;
                     break;
                 }
                 audev.write(pcm, 0, pcm.length);
-               // record.add(pcm);
                 currentPos++;
                 ret = 1;
             }
@@ -334,6 +329,66 @@ public class Player{
         }*/
     }
 
+    public void setPlayingAction(Runnable r)
+    {
+        playingAction = r;
+    }
 
+    /**
+     * 取得一個frame佔幾毫秒
+     * @return  單位為毫秒
+     */
+    public int getMsPerFrame(){return mp3Decoder.getMsPerFrame();}
+
+    /**
+     * 取得目前音樂檔的全長
+     * @return  單位為毫秒
+     */
+    public int getDuration(){return mp3Decoder.getDuratoin();}
+
+    /**
+     * 取得目前音樂檔的全長
+     * @return 格式為 mm : ss
+     */
+    public String getDurationFormatted()
+    {
+        String str = "";
+        int min = (getDuration() / 1000) / 60;
+        str += min;
+        if(min < 10)
+            str = 0 + str;
+        str += " : ";
+        String sec = "" + (getDuration() / 1000) % 60;
+        if(sec.length() == 1)
+            sec = 0 + sec;
+        str += sec;
+        return str;
+    }
+
+    /**
+     * 取得目前播放到的位置
+     * @return 單位為毫秒
+     */
+    public int getCurrentPosition()
+    {
+        return currentPos * getMsPerFrame();
+    }
+
+    /**
+     * 取得目前播放到的位置
+     * @return 格式為 mm : ss
+     */
+    public String getCurrentPositionFormatted()
+    {
+        String str;
+        String min = "" + (currentPos*getMsPerFrame() / 1000) / 60;
+        if(min.length() == 1)
+            min = 0 + min;
+        String sec = "" + (currentPos*getMsPerFrame() / 1000) % 60;
+        if(sec.length() == 1)
+            sec = 0 + sec;
+        str = min + " : " + sec;
+        return str;
+    }
 }
 

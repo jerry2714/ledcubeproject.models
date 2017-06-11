@@ -51,12 +51,23 @@ public class AndroidAudioDevice extends AudioDeviceBase{
     protected void closeImpl()
     {
         if (audioTrack != null)
-            audioTrack.pause(); //根據AudioDeviceBase定義必須及時停止並不能flush，所以不能用stop()並且不能在pause後接flush()
+            audioTrack.pause(); //根據AudioDeviceBase定義必須及時停止並且不能flush，所以不能用stop()並且不能在pause後接flush()
     }
 
     protected void flushImpl()
     {
-        audioTrack.flush();
+        int state;
+        while(true)
+        {
+            state = audioTrack.getState();
+            if(state == audioTrack.PLAYSTATE_STOPPED)
+            {
+                //System.out.println("STOP");
+                return;
+            }
+            else if(state == audioTrack.PLAYSTATE_PAUSED)
+                audioTrack.play();
+        }
     }
 
     private byte[] toByteArray(short[] samples, int offs, int len)

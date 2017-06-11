@@ -20,6 +20,7 @@ public class Mp3Decoder implements MusicDecoder {
 
     private int currentPos; //下一次會被解碼的frame的位置
     private int msPerFrame = 0;    //每個frame佔多少millisecond
+    private int duratoin = 0;      //全長共多少millisecond
 	public Mp3Decoder()
     {
         fileName = "";
@@ -51,11 +52,10 @@ public class Mp3Decoder implements MusicDecoder {
                 decoder = new Decoder();
             }
             ready = true;
-            short[] pcm = null;
-            pcm  = decodeFrame();
-           msPerFrame = pcm.length*1000 / (decoder.getOutputChannels() * decoder.getOutputFrequency());
-           System.out.println("msPerFrame = "+ msPerFrame);
-           refresh();
+            calculateTimeInfo();
+            refresh();
+            int sec = (duratoin / 1000) % 60;
+            int min = (duratoin / 1000) / 60;
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -159,5 +159,33 @@ public class Mp3Decoder implements MusicDecoder {
 
     public Decoder getDecoder(){return decoder;}
 
+    private void calculateTimeInfo()
+    {
+        Header h= null;
+        try {
+            h = bitstream.readFrame();
+        } catch (BitstreamException ex) {
+           ex.printStackTrace();
+        }
+        msPerFrame = (int) h.ms_per_frame();
+        long tn = 0;
+        try {
+            tn = fin.getChannel().size();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        duratoin = (int) h.total_ms((int) tn);
+    }
 
+    /**
+     * 取得一個frame佔幾毫秒
+     * @return  單位為毫秒
+     */
+    public int getMsPerFrame(){return msPerFrame;}
+
+    /**
+     * 取得目前音樂檔的全長
+     * @return  單位為毫秒
+     */
+    public int getDuratoin(){return duratoin;}
 }
