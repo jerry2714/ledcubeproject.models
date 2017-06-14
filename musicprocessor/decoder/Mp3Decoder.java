@@ -5,7 +5,6 @@ import javazoom.jl.player.AudioDevice;
 
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.PushbackInputStream;
 
 /**
  * Created by Jerry on 2017/1/25.
@@ -20,7 +19,7 @@ public class Mp3Decoder implements MusicDecoder {
 
     private int currentPos; //下一次會被解碼的frame的位置
     private int msPerFrame = 0;    //每個frame佔多少millisecond
-    private int duratoin = 0;      //全長共多少millisecond
+    private int duration = 0;      //全長共多少millisecond
 	public Mp3Decoder()
     {
         fileName = "";
@@ -54,8 +53,8 @@ public class Mp3Decoder implements MusicDecoder {
             ready = true;
             calculateTimeInfo();
             refresh();
-            int sec = (duratoin / 1000) % 60;
-            int min = (duratoin / 1000) / 60;
+            int sec = (duration / 1000) % 60;
+            int min = (duration / 1000) / 60;
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -174,7 +173,7 @@ public class Mp3Decoder implements MusicDecoder {
         } catch (IOException ex) {
             ex.printStackTrace();
         }
-        duratoin = (int) h.total_ms((int) tn);
+        duration = (int) h.total_ms((int) tn);
     }
 
     /**
@@ -187,5 +186,5 @@ public class Mp3Decoder implements MusicDecoder {
      * 取得目前音樂檔的全長
      * @return  單位為毫秒
      */
-    public int getDuration(){return duratoin;}
+    public int getDuration(){return duration;}
 }
