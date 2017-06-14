@@ -68,16 +68,18 @@ public class Player{
     public void init(String fileName)
     {
         try {
+            pause = true;
+
             mp3Decoder.init(fileName);
             mp3Decoder.bindAudioDevice(audev);
             sampleRate = 0;
             currentPos = 0;
             playback = new short[(mp3Decoder.getDuration()/mp3Decoder.getMsPerFrame() +1)][];
             segmentList.clear();
-
         }catch (Exception e){}
     }
 
+    boolean pauseFlag;
     /**
      * 一個簡單的播放功能，呼叫後會把一首音樂播完，播完後才會return，會占用執行緒
      * @return  0代表檔案播放完畢，-1代表錯誤，1代表暫停
@@ -90,21 +92,20 @@ public class Player{
             return ret;
         try {
             audev.open(mp3Decoder.getDecoder());
-            pause = false;
         } catch (JavaLayerException e) {
             e.printStackTrace();
             pause = true;
             return ret;
         }
         try {
-
-            while (!pause) {
-                if(playingAction != null)
+            pauseFlag = false;
+            pause = false;
+            while (!pauseFlag) {
+                if (playingAction != null)
                     (new Thread(playingAction)).start();
                 pcm = mp3Decoder.decodeFrame();
-                if(pcm == null)
-                {
-                    pause = true;
+                if (pcm == null) {
+                    pauseFlag = true;
                     audev.flush();
                     try {
                         Thread.sleep(1000);
@@ -118,12 +119,13 @@ public class Player{
                 currentPos++;
                 ret = 1;
             }
-            return ret;
         }catch (JavaLayerException e){
             e.printStackTrace();
             pause = true;
             return  -1;
         }
+        pause = true;
+        return ret;
     }
 
     public void setPosition(int pos)
@@ -233,7 +235,7 @@ public class Player{
      */
     public void pause()
     {
-        pause = true;
+        pauseFlag = true;
         audev.close();
     }
 
