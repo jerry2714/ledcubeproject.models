@@ -109,14 +109,18 @@ public class Player{
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm != null)
                 {
-                    System.out.println("p: " + playbackIndex);
+//                    System.out.println("p: " + playbackIndex);
                     playback[playbackIndex] = pcm;
                 }
                 if(playbackIndex > currentPos + offset || pcm == null)
                 {
-                    System.out.println("c: " + currentPos);
+//                    System.out.println("c: " + currentPos);
                     if(playback[currentPos] == null)
+                    {
+                        ret = 0;
                         break;
+                    }
+                    ret = currentPos;
                     audev.write(playback[currentPos], 0, playback[currentPos].length);
                     currentPos++;
                 }
