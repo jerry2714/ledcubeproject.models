@@ -53,8 +53,6 @@ public class Mp3Decoder implements MusicDecoder {
             ready = true;
             calculateTimeInfo();
             refresh();
-            int sec = (duration / 1000) % 60;
-            int min = (duration / 1000) / 60;
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -73,7 +71,7 @@ public class Mp3Decoder implements MusicDecoder {
         try {
             Header h = bitstream.readFrame();
             if(h == null){
-                refresh();
+                System.out.println("null");
                 return null;
             }
             pcm =  ((SampleBuffer)decoder.decodeFrame(h, bitstream)).getBuffer();
@@ -103,6 +101,8 @@ public class Mp3Decoder implements MusicDecoder {
             }
         return currentPos;
     }
+
+    public int getCurrentPosition(){return currentPos;}
 
     private void refresh()
     {
