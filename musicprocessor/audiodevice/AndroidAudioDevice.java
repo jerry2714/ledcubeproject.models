@@ -36,6 +36,7 @@ public class AndroidAudioDevice extends AudioDeviceBase{
             {
                 audioTrack.pause();
                 audioTrack.flush();
+                audioTrack.release();
             }
             audioTrack = null;
         }
