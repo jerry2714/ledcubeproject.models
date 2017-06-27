@@ -23,7 +23,7 @@ public class Player{
     private int sampleRate;
     private boolean pause = true;
     private int currentPos = 0; //下一個要播放的frame的位置
-    private int offset = 5;     //
+    private int offset = 30;     //
 
     private Runnable playingAction = null;
 
@@ -43,11 +43,12 @@ public class Player{
                 player.play();
             }
         }; n.start();
-        //player.play();
-        long s = System.nanoTime();
-        while(System.nanoTime() - s < 1000000000/1);
+        long t = System.nanoTime();
+        while((System.nanoTime() - t) < (1000000000L * 10L));
+        System.out.print((System.nanoTime() - t) / 1000000000.0);
         player.pause();
-        player.play();
+        //player.setPosition(300);
+        //player.play();
     }
 
     public Player(AudioDevice ad)
@@ -100,24 +101,25 @@ public class Player{
         try {
             pauseFlag = false;
             pause = false;
+            int playbackIndex = 0;
             while (!pauseFlag) {
                 if (playingAction != null)
                     (new Thread(playingAction)).start();
+                playbackIndex = mp3Decoder.getCurrentPosition();
                 pcm = mp3Decoder.decodeFrame();
-                if (pcm == null) {
-                    pauseFlag = true;
-                    audev.flush();
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    ret = 0;
-                    break;
+                if(pcm != null)
+                {
+                    System.out.println("p: " + playbackIndex);
+                    playback[playbackIndex] = pcm;
                 }
-                audev.write(pcm, 0, pcm.length);
-                currentPos++;
-                ret = 1;
+                if(playbackIndex > currentPos + offset || pcm == null)
+                {
+                    System.out.println("c: " + currentPos);
+                    if(playback[currentPos] == null)
+                        break;
+                    audev.write(playback[currentPos], 0, playback[currentPos].length);
+                    currentPos++;
+                }
             }
         }catch (JavaLayerException e){
             e.printStackTrace();
