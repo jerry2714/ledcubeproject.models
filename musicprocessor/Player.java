@@ -7,6 +7,7 @@ import javazoom.jl.player.JavaSoundAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
 import ledcubeproject.models.musicprocessor.processor.SimpleSpectrumAnalyzer;
 import javazoom.jl.player.AudioDevice;
+import ledcubeproject.util.Callback;
 
 
 /**
@@ -23,9 +24,9 @@ public class Player{
     private int sampleRate;
     private boolean pause = true;
     private int currentPos = 0; //下一個要播放的frame的位置
-    private int offset = 30;     //
+    private int offset = 0;     //
 
-    private Runnable playingAction = null;
+    private Callback playingAction = null;
 
 
     //private MusicSegment<short[]> playback;     //正要使用的PCM data segment
@@ -70,7 +71,7 @@ public class Player{
     {
         try {
             pause = true;
-
+            audev.close();
             mp3Decoder.init(fileName);
             mp3Decoder.bindAudioDevice(audev);
             sampleRate = 0;
@@ -103,13 +104,11 @@ public class Player{
             pause = false;
             int playbackIndex = 0;
             while (!pauseFlag) {
-                if (playingAction != null)
-                    (new Thread(playingAction)).start();
                 playbackIndex = mp3Decoder.getCurrentPosition();
                 pcm = mp3Decoder.decodeFrame();
                 if(pcm != null)
                 {
-//                    System.out.println("p: " + playbackIndex);
+                    spectrum = simpleSpectrumAnalyzer.getSpectrum(pcm);
                     playback[playbackIndex] = pcm;
                 }
                 if(playbackIndex > currentPos + offset || pcm == null)
@@ -123,6 +122,10 @@ public class Player{
                     ret = currentPos;
                     audev.write(playback[currentPos], 0, playback[currentPos].length);
                     currentPos++;
+                }
+                if (playingAction != null)
+                {
+                    playingAction.run();
                 }
             }
         }catch (JavaLayerException e){
@@ -300,15 +303,15 @@ public class Player{
     public int[] getCurrentSpectrum()
     {
         if(spectrum == null) return null;
-
+        double[] temp = spectrum;
         final int amount = 100;
 
         int[] s = new int[amount];
-        int n = spectrum.length / amount;
+//        int n = spectrum.length / amount;
         //int s[] = SpectrumStrategy.excute(spectrum, mp3Decoder.getSampleRate());
         for(int i = 0; i < s.length; i++)
         {
-            s[i] = (int) spectrum[i] /1000;
+            s[i] = (int) temp[i] /1000;
         }
         return s;
     }
@@ -342,9 +345,9 @@ public class Player{
         }*/
     }
 
-    public void setPlayingAction(Runnable r)
+    public void setPlayingAction(Callback c)
     {
-        playingAction = r;
+        playingAction = c;
     }
 
     /**
