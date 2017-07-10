@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.util.ArrayDeque;
 
 /**
- * 用以輸出資料至LED立方體的控制裝置，並擁有包含製作命令碼的公能，可以依照不同的通訊方式來繼承擴展，例如藍芽、wifi等等
+ * 用以輸出資料至LED立方體的控制裝置，並擁有包含製作命令碼的功能，可以依照不同的通訊方式來繼承擴展，例如藍芽、wifi等等
  * Created by Jerry on 2017/3/20.
  */
 public class LedCubeController {
@@ -39,7 +39,7 @@ public class LedCubeController {
     public static final int SAME_COLOR = (3 << 2);
     public static final int SAME_COLOR_STRIP = (4 << 2);
     public static final int STRIP = (5 << 2);
-
+    public static final int LINE = (6 << 2);
     public static final int DEFAULT_COMMAND_LENGTH = 3;
 
     private byte[] command = null;
@@ -184,19 +184,44 @@ public class LedCubeController {
         send(buf);
     }
 
-
+    /**
+     * 包裝 "單色連續多個燈" 命令與資料，並加入到傳輸佇列中
+     * @param output    是否輸出到燈
+     * @param offset     起點位置
+     * @param number  欲設定的燈數
+     * @param color      欲設定的顏色
+     */
     public void sameColorStrip(boolean output, int offset, int number, int color)
     {
-        byte[] buf = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SAME_COLOR_STRIP, offset, number);
-        for(byte b : buf)
+        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SAME_COLOR_STRIP, offset, number);
+        for(byte b : cmd)
             System.out.println(b);
-        addToQueue(buf);
-        buf = new byte[3];
+        addToQueue(cmd);
+        cmd = new byte[3];
         for(int i = 0; i < 3; i++) {
-            buf[i] = (byte) (color >> (8 * (3 - (i + 1))));
-            //System.out.println(buf[i]);
+            cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
+            //System.out.println(cmd[i]);
         }
-        addToQueue(buf);
+        addToQueue(cmd);
+    }
+
+    /**
+     * 包裝 "直線" 命令與資料，並加入到傳輸佇列中
+     * @param output 是否輸出到燈
+     * @param point1 起點
+     * @param point2 終點
+     * @param color   直線的顏色
+     */
+    public void line(boolean output, int point1, int point2, int color)
+    {
+        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+LINE, point1, point2);
+        addToQueue(cmd);
+        cmd = new byte[3];
+        for(int i = 0; i < 3; i++) {
+            cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
+            //System.out.println(cmd[i]);
+        }
+        addToQueue(cmd);
     }
 
 
