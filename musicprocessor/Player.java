@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.JavaSoundAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
-import ledcubeproject.models.musicprocessor.processor.SimpleSpectrumAnalyzer;
 import javazoom.jl.player.AudioDevice;
 import ledcubeproject.util.Callback;
+
+import static org.apache.commons.math3.util.FastMath.log;
 
 
 /**
@@ -19,7 +20,7 @@ public class Player{
     private Mp3Decoder mp3Decoder = new Mp3Decoder();
     private AudioDevice audev = null;
     private short pcm[];
-    private double spectrum[];
+    //private double spectrum[];
 
     private int sampleRate;
     private boolean pause = true;
@@ -31,9 +32,8 @@ public class Player{
 
     //private MusicSegment<short[]> playback;     //正要使用的PCM data segment
     private short[][] playback;
-    private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
+    //private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
 
-    private SimpleSpectrumAnalyzer simpleSpectrumAnalyzer = new SimpleSpectrumAnalyzer();
 
     public static void main(String args[]) throws JavaLayerException {
         final Player player = new Player(new JavaSoundAudioDevice(), args[0]);
@@ -77,7 +77,7 @@ public class Player{
             sampleRate = 0;
             currentPos = 0;
             playback = new short[(mp3Decoder.getDuration()/mp3Decoder.getMsPerFrame() +1)][];
-            segmentList.clear();
+            //segmentList.clear();
         }catch (Exception e){}
     }
 
@@ -89,6 +89,7 @@ public class Player{
     public int play()
     {
         int ret = -1;
+        boolean decodeable = true;
         pause = false;
         if(audev == null || mp3Decoder == null)
             return ret;
@@ -105,12 +106,18 @@ public class Player{
             int playbackIndex = 0;
             while (!pauseFlag) {
                 playbackIndex = mp3Decoder.getCurrentPosition();
-                pcm = mp3Decoder.decodeFrame();
+                if(decodeable)
+                    pcm = mp3Decoder.decodeFrame();
                 if(pcm != null)
                 {
-                    spectrum = simpleSpectrumAnalyzer.getSpectrum(pcm);
+
                     playback[playbackIndex] = pcm;
+                    if (playingAction != null)
+                    {
+                        playingAction.run();
+                    }
                 }
+                else decodeable = false;
                 if(playbackIndex > currentPos + offset || pcm == null)
                 {
 //                    System.out.println("c: " + currentPos);
@@ -122,10 +129,6 @@ public class Player{
                     ret = currentPos;
                     audev.write(playback[currentPos], 0, playback[currentPos].length);
                     currentPos++;
-                }
-                if (playingAction != null)
-                {
-                    playingAction.run();
                 }
             }
         }catch (JavaLayerException e){
@@ -257,30 +260,32 @@ public class Player{
         return !pause;
     }
 
-    public int[] playOneFrame()
-    {
-        if(audev == null || mp3Decoder == null)
-            return null;
-        pcm = mp3Decoder.decodeFrame();
-        if(pcm == null)
-            return  null;
-        try{
-            audev.write(pcm, 0, pcm.length);
-            int sum = 0;
-            for(int a : pcm)
-                sum += a;
-            sum /= pcm.length;
-            for(int i = 0; i < pcm.length; i++)
-                pcm[i] -= sum;
-            spectrum = simpleSpectrumAnalyzer.getSpectrum(pcm);
-            if(sampleRate == 0)
-            {
-                sampleRate = mp3Decoder.getSampleRate();
-                System.out.println("sample rate: "+ sampleRate);
-            }
-        }catch (Exception e){}
-        return getCurrentSpectrum();
-    }
+//    public int[] playOneFrame()
+//    {
+//        if(audev == null || mp3Decoder == null)
+//            return null;
+//        pcm = mp3Decoder.decodeFrame();
+//        if(pcm == null)
+//            return  null;
+//        try{
+//            audev.write(pcm, 0, pcm.length);
+//            int sum = 0;
+//            for(int a : pcm)
+//                sum += a;
+//            sum /= pcm.length;
+//            for(int i = 0; i < pcm.length; i++)
+//                pcm[i] -= sum;
+//            spectrum = simpleSpectrumAnalyzer.getSpectrum(pcm);
+//            if(sampleRate == 0)
+//            {
+//                sampleRate = mp3Decoder.getSampleRate();
+//                System.out.println("sample rate: "+ sampleRate);
+//            }
+//        }catch (Exception e){
+//            e.printStackTrace();
+//        }
+//        return getCurrentSpectrum();
+//    }
 
 //    public void updatePlayback()
 //    {
@@ -300,50 +305,12 @@ public class Player{
 //
 //    }
 
-    public int[] getCurrentSpectrum()
+    public short[] getCurrentPCM()
     {
-        if(spectrum == null) return null;
-        double[] temp = spectrum;
-        final int amount = 100;
-
-        int[] s = new int[amount];
-//        int n = spectrum.length / amount;
-        //int s[] = SpectrumStrategy.excute(spectrum, mp3Decoder.getSampleRate());
-        for(int i = 0; i < s.length; i++)
-        {
-            s[i] = (int) temp[i] /1000;
-        }
-        return s;
+        return pcm;
     }
 
-    static class SpectrumStrategy
-    {
-        static final int ranges[][] = {{20, 60}, {60, 250}, {250, 500}, {500, 2000}, {2000, 4000}, {4000, 6000}};
-        static final int amount = ranges.length;
-        static int[] excute(double[] spectrum, int sampleRate)
-        {
-            int count = 0;
-            int max = 0;
-            int freq;
-            int band[] = new int[2];
-            int[] result = new int[amount];
-            for(int i = 0; i < ranges.length; i++)
-            {
-                max = 0;
-                band[0] = ranges[i][0] * spectrum.length / sampleRate;
-                band[1] = ranges[i][1] * spectrum.length / sampleRate;
-                result[i] = (int)spectrum[band[0]];
-            }
-            return result;
-        }
 
-       /* static double [] getBigest(double[] array, int index1, int index2)
-        {
-            if(index1 - index2 <= 0) return null;
-            double arr[] = new double[index1-index2+1];
-            for()
-        }*/
-    }
 
     public void setPlayingAction(Callback c)
     {
