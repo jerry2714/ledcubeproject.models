@@ -2,7 +2,6 @@ package ledcubeproject.models.musicprocessor.processor;
 
 
 import org.jtransforms.fft.DoubleFFT_1D;
-
 import static java.lang.Math.cos;
 import static java.lang.Math.sqrt;
 
@@ -15,6 +14,9 @@ public class SimpleSpectrumAnalyzer {
     private DoubleFFT_1D fft_1D;
     private double hannWindow[];
     private int inputArray[];
+    private SpectrumStrategy spectrumStrategy = new SpectrumStrategy();
+
+
     public static void main(String args[])
     {
         short pcm[] = new short[]{980,988,1160,1080,928,1068,1156,1152,1176,1264};
@@ -31,6 +33,8 @@ public class SimpleSpectrumAnalyzer {
     {
         hannWindow = new double[0];
     }
+
+
 
     public double[] getFFTFromPCM(int[] pcm)
     {
@@ -71,5 +75,27 @@ public class SimpleSpectrumAnalyzer {
         return getMagnitude(getFFTFromPCM(inputArray));
     }
 
+    /**
+     * 取得想要的頻譜圖或者其他特殊圖形，取決於使用的策略(暫時不提供替換)
+     * @param pcm
+     * @param sampleRate
+     * @return 圖形陣列
+     */
+    public int[] getOutput(short[] pcm, int sampleRate)
+    {
+        if(pcm == null) return null;
+        double[] spectrum = getSpectrum(pcm);
+        final int amount = 100;
+
+        //int[] s = new int[amount];
+//        int n = spectrum.length / amount;
+        int s[] = spectrumStrategy.excute(spectrum, sampleRate);
+        for(int i = 0; i < s.length; i++)
+        {
+            //s[i] = (int) (log(2, temp[i]) * 10);
+            s[i] = (int) (spectrum[i] / 1000);
+        }
+        return s;
+    }
 
 }
