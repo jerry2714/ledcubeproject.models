@@ -22,7 +22,7 @@ public class Player{
     private short pcm[];
     //private double spectrum[];
 
-    private int sampleRate;
+
     private boolean pause = true;
     private int currentPos = 0; //下一個要播放的frame的位置
     private int offset = 0;     //
@@ -74,7 +74,6 @@ public class Player{
             audev.close();
             mp3Decoder.init(fileName);
             mp3Decoder.bindAudioDevice(audev);
-            sampleRate = 0;
             currentPos = 0;
             playback = new short[(mp3Decoder.getDuration()/mp3Decoder.getMsPerFrame() +1)][];
             //segmentList.clear();
@@ -310,7 +309,7 @@ public class Player{
         return pcm;
     }
 
-
+    public int getSampleRate(){return mp3Decoder.getSampleRate();}
 
     public void setPlayingAction(Callback c)
     {
