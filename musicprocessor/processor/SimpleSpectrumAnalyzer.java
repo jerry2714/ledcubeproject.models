@@ -14,7 +14,7 @@ public class SimpleSpectrumAnalyzer {
     private DoubleFFT_1D fft_1D;
     private double hannWindow[];
     private int inputArray[];
-    private SpectrumStrategy spectrumStrategy = new SpectrumStrategy();
+    private SpectrumStrategy spectrumStrategy = new EmptySpectrumStrategy();
 
 
     public static void main(String args[])
@@ -76,7 +76,7 @@ public class SimpleSpectrumAnalyzer {
     }
 
     /**
-     * 取得想要的頻譜圖或者其他特殊圖形，取決於使用的策略(暫時不提供替換)
+     * 取得想要的頻譜圖或者其他特殊圖形，圖形樣式取決於使用的策略
      * @param pcm
      * @param sampleRate
      * @return 圖形陣列
@@ -89,13 +89,22 @@ public class SimpleSpectrumAnalyzer {
 
         //int[] s = new int[amount];
 //        int n = spectrum.length / amount;
-        int s[] = spectrumStrategy.excute(spectrum, sampleRate);
+        int s[] = spectrumStrategy.execute(spectrum, sampleRate);
         for(int i = 0; i < s.length; i++)
         {
             //s[i] = (int) (log(2, temp[i]) * 10);
             s[i] = (int) (spectrum[i] / 1000);
         }
         return s;
+    }
+
+    /**
+     * 設定輸出的圖形所使用的策略
+     * @param s 欲使用的策略
+     */
+    public void setSpectrumStrategy(SpectrumStrategy s)
+    {
+        spectrumStrategy = s;
     }
 
 }

@@ -139,6 +139,10 @@ public class Player{
         return ret;
     }
 
+    /**
+     * 設定目前播放位置，單位為frame
+     * @param pos 欲設定到的位置
+     */
     public void setPosition(int pos)
     {
         pause();
@@ -215,32 +219,6 @@ public class Player{
 //        return true;
 //    }
 
-    public void test()
-    {
-        ArrayList<short[]> list = new ArrayList<>();
-        for(int i = 0; i < 100; i++)
-        {
-            pcm = mp3Decoder.decodeFrame();
-            System.out.println(pcm.length);
-            try {
-                audev.write(pcm, 0, pcm.length);
-            } catch (JavaLayerException e) {
-                e.printStackTrace();
-            }
-            currentPos++;
-            short[] p = new short[pcm.length];
-            for(int j = 0; j < pcm.length; j++)
-                p[j] = pcm[j];
-            list.add(p);
-        }
-        for(short[] p : list)
-            try {
-                audev.write(p, 0, p.length);
-            } catch (JavaLayerException e) {
-                e.printStackTrace();
-            }
-    }
-
     /**
      * 暫停播放
      */
@@ -304,13 +282,25 @@ public class Player{
 //
 //    }
 
+    /**
+     * 取的最新一個解碼器解出的frame
+     * @return
+     */
     public short[] getCurrentPCM()
     {
         return pcm;
     }
 
+    /**
+     * 取得取樣頻率
+     * @return  取樣頻率
+     */
     public int getSampleRate(){return mp3Decoder.getSampleRate();}
 
+    /**
+     * 設定播放時跟著進行的動作，會在每次解碼後呼叫此動作
+     * @param c
+     */
     public void setPlayingAction(Callback c)
     {
         playingAction = c;
