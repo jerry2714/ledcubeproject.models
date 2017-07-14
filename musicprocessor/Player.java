@@ -6,7 +6,7 @@ import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.JavaSoundAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
 import javazoom.jl.player.AudioDevice;
-import ledcubeproject.util.Callback;
+import ledcubeproject.models.util.Callback;
 
 import static org.apache.commons.math3.util.FastMath.log;
 
