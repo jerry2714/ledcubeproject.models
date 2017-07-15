@@ -84,18 +84,7 @@ public class SimpleSpectrumAnalyzer {
     public int[] getOutput(short[] pcm, int sampleRate)
     {
         if(pcm == null) return null;
-        double[] spectrum = getSpectrum(pcm);
-        final int amount = 100;
-
-        //int[] s = new int[amount];
-//        int n = spectrum.length / amount;
-        int s[] = spectrumStrategy.execute(spectrum, sampleRate);
-        for(int i = 0; i < s.length; i++)
-        {
-            //s[i] = (int) (log(2, temp[i]) * 10);
-            s[i] = (int) (spectrum[i] / 1000);
-        }
-        return s;
+        return spectrumStrategy.execute(getSpectrum(pcm), sampleRate);
     }
 
     /**
