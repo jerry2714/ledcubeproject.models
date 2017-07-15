@@ -1,12 +1,12 @@
 package ledcubeproject.models.musicprocessor;
 
-import java.util.ArrayList;
-
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.JavaSoundAudioDevice;
 import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
 import javazoom.jl.player.AudioDevice;
 import ledcubeproject.models.util.Callback;
+
+import java.util.ArrayList;
 
 import static org.apache.commons.math3.util.FastMath.log;
 
@@ -27,6 +27,8 @@ public class Player{
     private int currentPos = 0; //下一個要播放的frame的位置
     private int offset = 0;     //
 
+    private ArrayList<Callback> playingActions = new ArrayList<>();
+    private ArrayList<Callback> decodingActions = new ArrayList<>();
     private Callback playingAction = null;
 
 
@@ -111,10 +113,8 @@ public class Player{
                 {
 
                     playback[playbackIndex] = pcm;
-                    if (playingAction != null)
-                    {
-                        playingAction.run();
-                    }
+                    for(Callback c : decodingActions)
+                        c.run();
                 }
                 else decodeable = false;
                 if(playbackIndex > currentPos + offset || pcm == null)
@@ -127,6 +127,8 @@ public class Player{
                     }
                     ret = currentPos;
                     audev.write(playback[currentPos], 0, playback[currentPos].length);
+                    for(Callback c : playingActions)
+                        c.run();
                     currentPos++;
                 }
             }
@@ -298,13 +300,36 @@ public class Player{
     public int getSampleRate(){return mp3Decoder.getSampleRate();}
 
     /**
-     * 設定播放時跟著進行的動作，會在每次解碼後呼叫此動作
+     * @deprecated
+     * 設定播放時跟著進行的動作，會在每次送資料到音效裝置後呼叫此動作
      * @param c
      */
     public void setPlayingAction(Callback c)
     {
         playingAction = c;
     }
+
+    /**
+     * 加入一個播放時跟著進行的動作，會在每次解碼後呼叫此動作
+     * @param c
+     */
+    public void addPlayingAction(Callback c){playingActions.add(c);}
+
+    /**
+     * 清除所有跟隨播放進行的動作
+     */
+    public void clearPlayingAction(){playingActions.clear();}
+
+    /**
+     * 設定解碼時跟著進行的動作，會在每次解碼後呼叫此動作
+     * @param c
+     */
+    public void addDecodingAction(Callback c){decodingActions.add(c);}
+
+    /**
+     * 清除所有跟隨解碼進行的動作
+     */
+    public void clearDecodingAction(){decodingActions.clear();}
 
     /**
      * 取得一個frame佔幾毫秒
