@@ -1,4 +1,4 @@
-package ledcubeproject.models.musicprocessor.processor;
+package ledcubeproject.models.musicprocessor.processor.spectrumstrategy;
 
 /**
  * 配合SimpleSpectrumAnalyzer，目的在於提供SimpleSpectrumAnalyzer可替換的輸出圖形產生方法
@@ -18,10 +18,3 @@ public interface SpectrumStrategy {
 
 }
 
-class EmptySpectrumStrategy implements SpectrumStrategy{
-
-    @Override
-    public int[] execute(double[] spectrum, int sampleRate) {
-        return new int[0];
-    }
-}
