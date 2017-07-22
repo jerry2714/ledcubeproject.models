@@ -1,6 +1,8 @@
 package ledcubeproject.models.musicprocessor.processor;
 
 
+import ledcubeproject.models.musicprocessor.processor.spectrumstrategy.EmptySpectrumStrategy;
+import ledcubeproject.models.musicprocessor.processor.spectrumstrategy.SpectrumStrategy;
 import org.jtransforms.fft.DoubleFFT_1D;
 import static java.lang.Math.cos;
 import static java.lang.Math.sqrt;
@@ -47,7 +49,7 @@ public class SimpleSpectrumAnalyzer {
         return fft;
     }
 
-    public double[] getMagnitude(double fft[])
+    private double[] getMagnitude(double fft[])
     {
         if(fft == null) return null;
         double spectrum[] = new double[fft.length/2];
@@ -61,18 +63,29 @@ public class SimpleSpectrumAnalyzer {
 
     public double[] getSpectrum(short[] pcm)
     {
-        if(hannWindow.length != pcm.length){
-            hannWindow = new double[pcm.length];
+
+        if(inputArray == null || inputArray.length != pcm.length)
+            inputArray = new int[pcm.length];
+        int average = 0;
+        //for(short s: pcm)
+        //    average += s;
+        //average /= pcm.length;
+        // use Hann window
+        double[] hannWindow = getHannWindow(pcm.length);
+        for(int i = 0; i < pcm.length; i++)
+            inputArray[i] = (int)((pcm[i]-average) * hannWindow[i]);
+        return getMagnitude(getFFTFromPCM(inputArray));
+    }
+
+    public double[] getHannWindow(int length)
+    {
+        if(hannWindow.length != length){
+            hannWindow = new double[length];
             // Hann window define
             for (int i=0; i<hannWindow.length; i++)
                 hannWindow[i] = 0.5 * (1.0 - cos(2.0f*Math.PI*i / (float)(hannWindow.length-1)));
         }
-        if(inputArray == null || inputArray.length != pcm.length)
-            inputArray = new int[pcm.length];
-        // use Hann window
-        for(int i = 0; i < pcm.length; i++)
-            inputArray[i] = (int)(pcm[i] * hannWindow[i]);
-        return getMagnitude(getFFTFromPCM(inputArray));
+        return hannWindow;
     }
 
     /**
