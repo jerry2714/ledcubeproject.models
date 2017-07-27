@@ -5,7 +5,6 @@ public class TwentyBands implements SpectrumStrategy{
     public int[] execute(double[] spectrum, int sampleRate) {
         final int lowLimit[] = {89, 112, 141, 178, 224, 282, 355, 447, 562, 708, 891, 1122, 1413, 1778, 2239, 2818, 3548, 4467, 5623, 7079};
         final int upperLimit[] = {112, 141, 178, 224, 282, 355, 447, 562, 708, 891, 1122, 1413, 1778, 2239, 2818, 3548, 4467, 5623, 7079, 8913};
-        //final int center[] =     {63, 100, 160, 250, 400, 630, 1000, 1600, 2500, 4000};
         final int limitMax = 6;
         final int limitMin = 0;
         final int amount = 20;
@@ -38,11 +37,11 @@ public class TwentyBands implements SpectrumStrategy{
 
     }
 
-    private double scale(double num, double min, double max, double limitMin, double limitMax) {
+    protected double scale(double num, double min, double max, double limitMin, double limitMax) {
         return (limitMax - limitMin) * (num - min) / (max - min) + limitMin;
     }
 
-    private double max(double[] spectrum, int sampleRate, int r1, int r2) {
+    protected double max(double[] spectrum, int sampleRate, int r1, int r2) {
         r1 = r1 * spectrum.length / (sampleRate);
         r2 = r2 * spectrum.length / (sampleRate);
         double max = 0;
