@@ -42,7 +42,6 @@ public class LedCubeController {
     public static final int LINE = (6 << 2);
     public static final int DEFAULT_COMMAND_LENGTH = 3;
 
-    private byte[] command = null;
 
     private OutputStream outputStream = null;
     private InputStream inputStream = null;
@@ -55,7 +54,6 @@ public class LedCubeController {
 
     public LedCubeController()
     {
-        command = new byte[DEFAULT_COMMAND_LENGTH];
     }
 
     /**
@@ -67,6 +65,7 @@ public class LedCubeController {
      */
     public byte[] command(int command, int funcCode, int number)
     {
+        byte[] cmd = new byte[DEFAULT_COMMAND_LENGTH];
         byte dataFlag = 0;
         switch(command)
         {
@@ -78,11 +77,11 @@ public class LedCubeController {
                 funcCode = command;
                 break;
         }
-        this.command[0] = (byte) (dataFlag + funcCode);
-        this.command[1] = (byte) ( (number >> 8)& 0x00ff);
-        this.command[2] = (byte) (number & 0x00ff);
+        cmd[0] = (byte) (dataFlag + funcCode);
+        cmd[1] = (byte) ( (number >> 8)& 0x00ff);
+        cmd[2] = (byte) (number & 0x00ff);
 
-        return this.command;
+        return cmd;
     }
 
     public byte[] command(int command, int funcCode, int high, int low)
@@ -98,7 +97,7 @@ public class LedCubeController {
      * @param buf
      * @throws IOException
      */
-    public void send(byte[] buf) throws IOException {
+    public void send(byte[] buf) throws IOException, NullPointerException {
         outputStream.write(buf);
         //Log.d("mytest", "send");
     }
@@ -214,8 +213,10 @@ public class LedCubeController {
             for(byte b : bs)
             {
                 buf[i] = b;
+                System.out.print(b + " ");
                 i++;
             }
+           System.out.println();
         }
         send(buf);
         transferQueue.clear();
