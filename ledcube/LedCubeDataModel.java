@@ -107,7 +107,7 @@ public class LedCubeDataModel extends LedCubeStructure {
         return outputBuffer;
     }
 
-    private int coordinateConvert(int x, int y, int z)
+    public int coordinateConvert(int x, int y, int z)
     {
        int l = getSideLength();
         if(y % 2 == 0)
