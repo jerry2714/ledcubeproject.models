@@ -51,72 +51,6 @@ public class LedCubeController {
     private int totalSizeInQueue = 0;
     private int availableTransferSize = 63;
 
-//    /**
-//     * 標記目前有沒有CommunicationThread正在執行中，用以避免同時有兩個CommunicatoinThread在執行的狀況
-//     */
-//    private boolean communicating = false;
-
-//    class CommunicationThread extends Thread
-//    {
-//        byte[] buf = null;
-//        byte[] s = new byte[1];
-//        int transferSize = 0;
-//        CommunicationThread(byte[] buf)
-//        {
-//            this.buf = buf;
-//        }
-//        @Override
-//        public void run() {
-//            long time = 0;
-//            communicating = true;
-//            int offset = 0;
-////            try {
-////                while (offset < buf.length) {
-////                    if(availableTransferSize <= 0)
-////                        while (inputStream.available() <= 0);
-////                    time = System.nanoTime();
-////                    while (inputStream.available() > 0) {
-////                        availableTransferSize += inputStream.read();
-////                    }
-////                    time = System.nanoTime() - time;
-////                    // System.out.println("wait: "+time);
-////                    if(availableTransferSize < 0)
-////                        availableTransferSize = 0;
-////                    if(offset + availableTransferSize > buf.length)     //可傳量超過剩餘量
-////                        transferSize = buf.length - offset;
-////                    else transferSize = availableTransferSize;
-////                    System.out.println("send: "+transferSize + "bytes");
-////                    outputStream.write(buf, offset, transferSize);
-////                    /*for(int j = 0; j < availableTransferSize; j++)
-////                        System.out.println(buf[i+j]);*/
-////                    offset = offset + transferSize;
-////                    availableTransferSize -= transferSize;
-////                }
-////            }catch (IOException e)
-////            {
-////                e.printStackTrace();
-////                return;
-////            }
-////            communicating = false;
-//            try {
-//                while(offset < buf.length)
-//                {
-//                    //time = System.nanoTime();
-//                    if(offset + availableTransferSize > buf.length)
-//                        transferSize = buf.length - offset;
-//                    else transferSize = availableTransferSize;
-//                    outputStream.write(buf, offset, transferSize);
-//                    //while(System.nanoTime() - time < (1000000000 / 50000));
-//                    //time = System.nanoTime();
-//                    offset += availableTransferSize;
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//                return;
-//            }
-//            communicating = false;
-//        }
-//    }
 
 
     public LedCubeController()
@@ -202,6 +136,21 @@ public class LedCubeController {
             cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
             //System.out.println(cmd[i]);
         }
+        addToQueue(cmd);
+    }
+
+    /**
+     * 包裝 "設定背景色" 命令與資料，並加入到傳輸佇列中
+     * @param output    是否輸出到燈
+     * @param color      欲設定的顏色
+     */
+    public void setSetBackground(boolean output, int color)
+    {
+        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SET_BACKGROUND, 0);
+        addToQueue(cmd);
+        cmd = new byte[3];
+        for(int i = 0; i < 3; i++)
+            cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
         addToQueue(cmd);
     }
 
