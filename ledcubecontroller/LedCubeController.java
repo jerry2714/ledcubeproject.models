@@ -139,13 +139,14 @@ public class LedCubeController {
     }
 
     /**
-     * 包裝 "設定背景色" 命令與資料，並加入到傳輸佇列中
+     * 包裝 "設定背景" 命令與資料，並加入到傳輸佇列中
      * @param output    是否輸出到燈
+     * @param number   圖形的編號
      * @param color      欲設定的顏色
      */
-    public void setSetBackground(boolean output, int color)
+    public void setSetBackground(boolean output, int number, int color)
     {
-        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SET_BACKGROUND, 0);
+        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SET_BACKGROUND, number);
         addToQueue(cmd);
         cmd = new byte[3];
         for(int i = 0; i < 3; i++)
