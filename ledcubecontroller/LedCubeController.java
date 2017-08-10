@@ -109,6 +109,41 @@ public class LedCubeController {
     }
 
     /**
+     * 包裝 "設定背景" 命令與資料，並加入到傳輸佇列中
+     *
+     * @param output 是否輸出到燈
+     * @param number 圖形的編號
+     * @param color  欲設定的顏色
+     */
+    public void setBackground(boolean output, int number, int color) {
+        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + SET_BACKGROUND, number);
+        addToQueue(cmd);
+        cmd = new byte[3];
+        for (int i = 0; i < 3; i++)
+            cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
+        addToQueue(cmd);
+    }
+
+    /**
+     * 包裝 "單色多個燈" 命令與資料，並加入到傳輸佇列中
+     * @param output 是否輸出到燈
+     * @param number 欲設定的燈數
+     * @param color 顏色
+     * @param pos 所有欲設定的燈的位置
+     */
+    public void sameColor(boolean output, int number, int color, byte pos[]) {
+        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + SAME_COLOR, number);
+        addToQueue(cmd);
+        cmd = new byte[3];
+        for (int i = 0; i < 3; i++) {
+            cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
+        }
+        addToQueue(cmd);
+        if(pos != null && pos.length > 0)
+            addToQueue(pos);
+    }
+
+    /**
      * 包裝 "單色連續多個燈" 命令與資料，並加入到傳輸佇列中
      *
      * @param output 是否輸出到燈
@@ -118,30 +153,22 @@ public class LedCubeController {
      */
     public void sameColorStrip(boolean output, int offset, int number, int color) {
         byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + SAME_COLOR_STRIP, offset, number);
-        for (byte b : cmd)
-            System.out.println(b);
         addToQueue(cmd);
         cmd = new byte[3];
         for (int i = 0; i < 3; i++) {
             cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
-            //System.out.println(cmd[i]);
         }
         addToQueue(cmd);
     }
 
     /**
-     * 包裝 "設定背景" 命令與資料，並加入到傳輸佇列中
-     *
+     * 包裝 "連續多個燈" 命令，並加入到傳輸佇列中
      * @param output 是否輸出到燈
-     * @param number 圖形的編號
-     * @param color  欲設定的顏色
+     * @param offset 起點位置
+     * @param number 欲設定的燈數
      */
-    public void setSetBackground(boolean output, int number, int color) {
-        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + SET_BACKGROUND, number);
-        addToQueue(cmd);
-        cmd = new byte[3];
-        for (int i = 0; i < 3; i++)
-            cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
+    public void strip(boolean output, int offset, int number) {
+        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + STRIP, offset, number);
         addToQueue(cmd);
     }
 
@@ -164,6 +191,13 @@ public class LedCubeController {
         addToQueue(cmd);
     }
 
+    /**
+     * 包裝 "送出" 命令，並加入到傳輸佇列中
+     */
+    public void output() {
+        byte[] cmd = command(OUTPUT, 0, 0);
+        addToQueue(cmd);
+    }
 
     /**
      * 加入一組資料到傳輸佇列裡
