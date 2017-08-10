@@ -90,12 +90,11 @@ public class LedCubeController {
         return command(command, funcCode, number);
     }
 
-
-
     /**
      * 對已連線的裝置送出一組資料
      * @param buf
      * @throws IOException
+     * @throws NullPointerException
      */
     public void send(byte[] buf) throws IOException, NullPointerException {
         outputStream.write(buf);
@@ -204,8 +203,9 @@ public class LedCubeController {
     /**
      * 將傳輸佇列裡的資料輸出並清空
      * @throws IOException
+     * @throws NullPointerException
      */
-    public void sendQueue() throws IOException
+    public void sendQueue() throws IOException, NullPointerException
     {
         byte[] buf = new byte[totalSizeInQueue];
         int i = 0;
@@ -214,14 +214,14 @@ public class LedCubeController {
             for(byte b : bs)
             {
                 buf[i] = b;
-                System.out.print(b + " ");
+                //System.out.print(b + " ");
                 i++;
             }
-           System.out.println();
+           //System.out.println();
         }
-        send(buf);
         transferQueue.clear();
         totalSizeInQueue = 0;
+        send(buf);
     }
 
 //    public boolean startTransmission()
