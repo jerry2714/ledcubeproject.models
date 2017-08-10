@@ -9,9 +9,10 @@ public interface SpectrumStrategy {
 
     /**
      * 處理頻譜，產生想要的圖形
-     * @param spectrum  頻譜
+     *
+     * @param spectrum   頻譜
      * @param sampleRate 取樣頻率
-     * @return  目標圖形
+     * @return 目標圖形
      */
     int[] execute(double[] spectrum, int sampleRate);
 

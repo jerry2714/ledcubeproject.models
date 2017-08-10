@@ -14,35 +14,34 @@ public class LedCubeDataModel extends LedCubeStructure {
     private int[] insideBuffer;
     private int[] outputBuffer;
     private int currentUsedSize = 0;
-    public static void main(String args[])
-    {
-        LedCubeDataModel ledCubeDataModel = new LedCubeDataModel(6);
-    }
 
     /**
-     *
-     * @param sideLength  LED立方體的邊長
+     * @param sideLength LED立方體的邊長
      */
     public LedCubeDataModel(int sideLength) {
         super(sideLength);
-        insideBuffer = new int[sideLength*sideLength*sideLength];
+        insideBuffer = new int[sideLength * sideLength * sideLength];
         //outputBuffer = new int[sideLength*sideLength*sideLength];
         previousFrame = new LedCubeStructure(sideLength);
         previousFrame.clear();
     }
 
+    public static void main(String args[]) {
+        LedCubeDataModel ledCubeDataModel = new LedCubeDataModel(6);
+    }
+
     /**
      * 自動將設定的位置顏色加入buffer
-     * @param x     x座標
-     * @param y     y座標
-     * @param z     z座標
+     *
+     * @param x   x座標
+     * @param y   y座標
+     * @param z   z座標
      * @param rgb
      */
     @Override
     public void setColor(int x, int y, int z, int rgb) {
         super.setColor(x, y, z, rgb);
-        if(currentUsedSize >= insideBuffer.length)
-        {
+        if (currentUsedSize >= insideBuffer.length) {
             regenerateCubeData();
             return;
         }
@@ -52,13 +51,13 @@ public class LedCubeDataModel extends LedCubeStructure {
 
     /**
      * 產生指定座標的輸出燈號資料
+     *
      * @param x
      * @param y
      * @param z
-     * @return  4bytes可輸出燈號資料(1 byte 位置，3byte顏色，暫時以一個int表示(類ARGB模型，A的部分以1 byte位置取代))
+     * @return 4bytes可輸出燈號資料(1 byte 位置，3byte顏色，暫時以一個int表示(類ARGB模型，A的部分以1 byte位置取代))
      */
-    public int generateOneData(int x, int y, int z)
-    {
+    public int generateOneData(int x, int y, int z) {
         return combinePosAndColor(coordinateConvert(x, y, z), getColor(x, y, z));
     }
 
@@ -79,13 +78,11 @@ public class LedCubeDataModel extends LedCubeStructure {
     /**
      * 清空buffer
      */
-    public void clearBuffer()
-    {
+    public void clearBuffer() {
         currentUsedSize = 0;
     }
 
-    public void clear()
-    {
+    public void clear() {
         super.clear();
         clearBuffer();
         setColor(0, 0, 0, 0);
@@ -93,13 +90,13 @@ public class LedCubeDataModel extends LedCubeStructure {
 
     /**
      * 取得儲存目前的尚未取得過的資料(呼叫一次後會清空buffer，再次呼叫不會得到相同的buffer)
-     * @return  輸出buffer
+     *
+     * @return 輸出buffer
      */
-    public int[] getOutputBuffer()
-    {
-        if(currentUsedSize == 0) return null;
+    public int[] getOutputBuffer() {
+        if (currentUsedSize == 0) return null;
         outputBuffer = new int[currentUsedSize];
-        for(int i = 0; i < currentUsedSize; i++)
+        for (int i = 0; i < currentUsedSize; i++)
             outputBuffer[i] = insideBuffer[i];
         /*for(int i = currentUsedSize; i < outputBuffer.length; i++)
             outputBuffer[i] = 0;*/
@@ -107,21 +104,19 @@ public class LedCubeDataModel extends LedCubeStructure {
         return outputBuffer;
     }
 
-    public int coordinateConvert(int x, int y, int z)
-    {
-       int l = getSideLength();
-        if(y % 2 == 0)
-            return z*l*l + y*l + x;
+    public int coordinateConvert(int x, int y, int z) {
+        int l = getSideLength();
+        if (y % 2 == 0)
+            return z * l * l + y * l + x;
         else
-            return z*l*l + y*l + (l-x-1);
+            return z * l * l + y * l + (l - x - 1);
     }
-    private int combinePosAndColor(int pos, int color)
-    {
+
+    private int combinePosAndColor(int pos, int color) {
         int result = color & 0x00FFFFFF;
         result = result | (pos << 24);
         return result;
     }
-
 
 
 }

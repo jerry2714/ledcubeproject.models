@@ -48,8 +48,7 @@ public class BluetoothLedCubeController extends LedCubeController {
     /**
      * 清除和前一次連線相關的屬性
      */
-    public void clean()
-    {
+    public void clean() {
         bluetoothSocket = null;
     }
 
@@ -97,9 +96,8 @@ public class BluetoothLedCubeController extends LedCubeController {
         for (BluetoothDevice device : pairedDevices) {
             if (device.getName().equals(deviceName)) {
                 Log.d("mytest", "device found");
-                if (bluetoothSocket != null)
-                {
-                    if(bluetoothSocket.getRemoteDevice().equals(device))
+                if (bluetoothSocket != null) {
+                    if (bluetoothSocket.getRemoteDevice().equals(device))
                         return true;
                     else
                         disconnect();
@@ -155,9 +153,8 @@ public class BluetoothLedCubeController extends LedCubeController {
         return false;
     }
 
-    public void disconnect()
-    {
-        if(bluetoothSocket != null)
+    public void disconnect() {
+        if (bluetoothSocket != null)
             try {
                 bluetoothSocket.close();
                 bluetoothSocket = null;
@@ -166,18 +163,13 @@ public class BluetoothLedCubeController extends LedCubeController {
             }
     }
 
-    public boolean isConnected()
-    {
-        try{
+    public boolean isConnected() {
+        try {
             return bluetoothSocket.isConnected();
-        }catch (Exception e){
+        } catch (Exception e) {
             return false;
         }
     }
-
-
-
-
 
 
 }

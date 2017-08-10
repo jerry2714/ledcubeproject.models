@@ -63,11 +63,12 @@ public class LedCubeStructure {
         else return false;
     }
 
-    public int getColor(int x, int y, int z)
-    {
+    public int getColor(int x, int y, int z) {
         return structure[x][y][z];
     }
 
-    public int getSideLength(){return sideLength;}
+    public int getSideLength() {
+        return sideLength;
+    }
 
 }

@@ -1,6 +1,6 @@
 package ledcubeproject.models.musicprocessor.processor.spectrumstrategy;
 
-public class EmptySpectrumStrategy implements SpectrumStrategy{
+public class EmptySpectrumStrategy implements SpectrumStrategy {
 
     @Override
     public int[] execute(double[] spectrum, int sampleRate) {

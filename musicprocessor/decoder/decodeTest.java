@@ -8,11 +8,10 @@ import javazoom.jl.player.FactoryRegistry;
  */
 public class decodeTest {
 
-    public static void main(String args[])
-    {
+    public static void main(String args[]) {
         Mp3Decoder mp3Decoder;
 
-        if(args.length != 1){
+        if (args.length != 1) {
             System.out.println("no file input");
             return;
         }
@@ -27,9 +26,10 @@ public class decodeTest {
             short pcm[];
             while (max-- > 0 && ret) {
                 pcm = mp3Decoder.decodeFrame();
-                if(pcm == null) ret = false;
+                if (pcm == null) ret = false;
                 audev.write(pcm, 0, pcm.length);
             }
-        }catch (Exception e){}
+        } catch (Exception e) {
+        }
     }
 }

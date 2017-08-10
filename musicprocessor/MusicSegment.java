@@ -6,68 +6,59 @@ package ledcubeproject.models.musicprocessor;
  */
 
 
-
 import java.util.ArrayList;
 
 /**
  * 用來儲存一段已解碼成PCM data的音樂資料
+ *
  * @param <E>
  */
-class MusicSegment<E> extends ArrayList<E> implements Comparable<MusicSegment>
-{
+class MusicSegment<E> extends ArrayList<E> implements Comparable<MusicSegment> {
 
     private int start;
 
-    public MusicSegment(int start)
-    {
+    public MusicSegment(int start) {
         super();
         this.start = start;
     }
 
-    /**
-     * 檢查某個位置的frame是否在這個音樂片段之中
-     * @param pos   代表這個frame是整首音樂中的位置
-     * @return
-     */
-    public boolean checkInside(int pos)
-    {
-        if(pos <= start+this.size()-1 && pos >= start)
-        {
-            // System.out.println(pos + " " + start + " " + (start+length-1) + " true");
-            return true;
-        }
-        else
-        {
-            // System.out.println(pos + " " + start + " " + (start+length-1) + " false");
-            return false;
-        }
-    }
-
-    public boolean add(E e, int pos)
-    {
-        if(start + this.size() == pos)
-            return add(e);
-        else
-            return false;
-    }
-
-    static private boolean mergeable(MusicSegment destination, MusicSegment source)
-    {
+    static private boolean mergeable(MusicSegment destination, MusicSegment source) {
         int sourceHead = source.getStartPosition();
-        if(destination.checkInside(sourceHead) || destination.checkInside(sourceHead-1))
-        {
+        if (destination.checkInside(sourceHead) || destination.checkInside(sourceHead - 1)) {
             //System.out.println("true");
             return true;
-        }
-        else
-        {
+        } else {
             //System.out.println("false");
             return false;
         }
     }
 
     /**
+     * 檢查某個位置的frame是否在這個音樂片段之中
+     *
+     * @param pos 代表這個frame是整首音樂中的位置
+     * @return
+     */
+    public boolean checkInside(int pos) {
+        if (pos <= start + this.size() - 1 && pos >= start) {
+            // System.out.println(pos + " " + start + " " + (start+length-1) + " true");
+            return true;
+        } else {
+            // System.out.println(pos + " " + start + " " + (start+length-1) + " false");
+            return false;
+        }
+    }
+
+    public boolean add(E e, int pos) {
+        if (start + this.size() == pos)
+            return add(e);
+        else
+            return false;
+    }
+
+    /**
      * 把兩個音樂片段合併
+     *
      * @param destination
      * @param source
      * @return
@@ -94,8 +85,9 @@ class MusicSegment<E> extends ArrayList<E> implements Comparable<MusicSegment>
 //        }
 //        return false;
 //    }
-
-    public int getStartPosition(){return start;}
+    public int getStartPosition() {
+        return start;
+    }
 
     @Override
     public int compareTo(MusicSegment o) {

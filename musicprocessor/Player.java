@@ -1,98 +1,89 @@
 package ledcubeproject.models.musicprocessor;
 
-import javazoom.jl.decoder.JavaLayerException;
-import javazoom.jl.player.JavaSoundAudioDevice;
-import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
-import javazoom.jl.player.AudioDevice;
-import ledcubeproject.models.util.Callback;
-
 import java.util.ArrayList;
 
-import static org.apache.commons.math3.util.FastMath.log;
+import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.player.AudioDevice;
+import javazoom.jl.player.JavaSoundAudioDevice;
+import ledcubeproject.models.musicprocessor.decoder.Mp3Decoder;
+import ledcubeproject.models.util.Callback;
 
 
 /**
  * 簡易播放mp3播放器
  * Created by Jerry on 2017/2/1.
  */
-public class Player{
+public class Player {
 
+    boolean pauseFlag;
     private Mp3Decoder mp3Decoder = new Mp3Decoder();
     private AudioDevice audev = null;
-    private short pcm[];
     //private double spectrum[];
-
-
+    private short pcm[];
     private boolean pause = true;
     private int currentPos = 0; //下一個要播放的frame的位置
     private int offset = 0;     //
-
     private ArrayList<Callback> playingActions = new ArrayList<>();
     private ArrayList<Callback> decodingActions = new ArrayList<>();
     private Callback playingAction = null;
-
-
+    //private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
     //private MusicSegment<short[]> playback;     //正要使用的PCM data segment
     private short[][] playback;
-    //private ArrayList<MusicSegment<short[]>> segmentList= new ArrayList<>(); //所有目前的檔案已解碼出的PCM data segments
 
+    public Player(AudioDevice ad) {
+        audev = ad;
+    }
+
+    public Player(AudioDevice ad, String fileName) {
+        this(ad);
+        init(fileName);
+    }
 
     public static void main(String args[]) throws JavaLayerException {
         final Player player = new Player(new JavaSoundAudioDevice(), args[0]);
         //player.setPosition(10000);
-        Thread n = new Thread(){
-            public void run()
-            {
+        Thread n = new Thread() {
+            public void run() {
                 player.play();
             }
-        }; n.start();
+        };
+        n.start();
         long t = System.nanoTime();
-        while((System.nanoTime() - t) < (1000000000L * 10L));
+        while ((System.nanoTime() - t) < (1000000000L * 10L)) ;
         System.out.print((System.nanoTime() - t) / 1000000000.0);
         player.pause();
         //player.setPosition(300);
         //player.play();
     }
 
-    public Player(AudioDevice ad)
-    {
-        audev = ad;
-    }
-
-    public Player(AudioDevice ad, String fileName)
-    {
-        this(ad);
-        init(fileName);
-    }
-
     /**
      * 呼叫以開始處理一個新的音樂檔案
+     *
      * @param fileName
      */
-    public void init(String fileName)
-    {
+    public void init(String fileName) {
         try {
             pause = true;
             audev.close();
             mp3Decoder.init(fileName);
             mp3Decoder.bindAudioDevice(audev);
             currentPos = 0;
-            playback = new short[(mp3Decoder.getDuration()/mp3Decoder.getMsPerFrame() +1)][];
+            playback = new short[(mp3Decoder.getDuration() / mp3Decoder.getMsPerFrame() + 1)][];
             //segmentList.clear();
-        }catch (Exception e){}
+        } catch (Exception e) {
+        }
     }
 
-    boolean pauseFlag;
     /**
      * 一個簡單的播放功能，呼叫後會把一首音樂播完，播完後才會return，會占用執行緒
-     * @return  0代表檔案播放完畢，-1代表錯誤，1代表暫停
+     *
+     * @return 0代表檔案播放完畢，-1代表錯誤，1代表暫停
      */
-    public int play()
-    {
+    public int play() {
         int ret = -1;
         boolean decodeable = true;
         pause = false;
-        if(audev == null || mp3Decoder == null)
+        if (audev == null || mp3Decoder == null)
             return ret;
         try {
             audev.open(mp3Decoder.getDecoder());
@@ -107,35 +98,31 @@ public class Player{
             int playbackIndex = 0;
             while (!pauseFlag) {
                 playbackIndex = mp3Decoder.getCurrentPosition();
-                if(decodeable)
+                if (decodeable)
                     pcm = mp3Decoder.decodeFrame();
-                if(pcm != null)
-                {
+                if (pcm != null) {
 
                     playback[playbackIndex] = pcm;
-                    for(Callback c : decodingActions)
+                    for (Callback c : decodingActions)
                         c.run();
-                }
-                else decodeable = false;
-                if(playbackIndex > currentPos + offset || pcm == null)
-                {
+                } else decodeable = false;
+                if (playbackIndex > currentPos + offset || pcm == null) {
 //                    System.out.println("c: " + currentPos);
-                    if(playback[currentPos] == null)
-                    {
+                    if (playback[currentPos] == null) {
                         ret = 0;
                         break;
                     }
                     ret = currentPos;
                     audev.write(playback[currentPos], 0, playback[currentPos].length);
-                    for(Callback c : playingActions)
+                    for (Callback c : playingActions)
                         c.run();
                     currentPos++;
                 }
             }
-        }catch (JavaLayerException e){
+        } catch (JavaLayerException e) {
             e.printStackTrace();
             pause = true;
-            return  -1;
+            return -1;
         }
         pause = true;
         return ret;
@@ -143,10 +130,10 @@ public class Player{
 
     /**
      * 設定目前播放位置，單位為frame
+     *
      * @param pos 欲設定到的位置
      */
-    public void setPosition(int pos)
-    {
+    public void setPosition(int pos) {
         pause();
         mp3Decoder.changePosition(pos);
         currentPos = pos;
@@ -224,18 +211,17 @@ public class Player{
     /**
      * 暫停播放
      */
-    public void pause()
-    {
+    public void pause() {
         pauseFlag = true;
         audev.close();
     }
 
     /**
      * 回傳是否正在播放
-     * @return  true代表正在播放，反之false
+     *
+     * @return true代表正在播放，反之false
      */
-    public boolean isPlaying()
-    {
+    public boolean isPlaying() {
         return !pause;
     }
 
@@ -286,77 +272,94 @@ public class Player{
 
     /**
      * 取的最新一個解碼器解出的frame
+     *
      * @return
      */
-    public short[] getCurrentPCM()
-    {
+    public short[] getCurrentPCM() {
         return pcm;
     }
 
     /**
      * 取得取樣頻率
-     * @return  取樣頻率
+     *
+     * @return 取樣頻率
      */
-    public int getSampleRate(){return mp3Decoder.getSampleRate();}
+    public int getSampleRate() {
+        return mp3Decoder.getSampleRate();
+    }
 
     /**
-     * @deprecated
-     * 設定播放時跟著進行的動作，會在每次送資料到音效裝置後呼叫此動作
      * @param c
+     * @deprecated 設定播放時跟著進行的動作，會在每次送資料到音效裝置後呼叫此動作
      */
-    public void setPlayingAction(Callback c)
-    {
+    public void setPlayingAction(Callback c) {
         playingAction = c;
     }
 
     /**
      * 加入一個播放時跟著進行的動作，會在每次解碼後呼叫此動作
+     *
      * @param c
      */
-    public void addPlayingAction(Callback c){playingActions.add(c);}
+    public void addPlayingAction(Callback c) {
+        playingActions.add(c);
+    }
 
     /**
      * 清除所有跟隨播放進行的動作
      */
-    public void clearPlayingAction(){playingActions.clear();}
+    public void clearPlayingAction() {
+        playingActions.clear();
+    }
 
     /**
      * 設定解碼時跟著進行的動作，會在每次解碼後呼叫此動作
+     *
      * @param c
      */
-    public void addDecodingAction(Callback c){decodingActions.add(c);}
+    public void addDecodingAction(Callback c) {
+        decodingActions.add(c);
+    }
 
     /**
      * 清除所有跟隨解碼進行的動作
      */
-    public void clearDecodingAction(){decodingActions.clear();}
+    public void clearDecodingAction() {
+        decodingActions.clear();
+    }
 
     /**
      * 取得一個frame佔幾毫秒
-     * @return  單位為毫秒
+     *
+     * @return 單位為毫秒
      */
-    public int getMsPerFrame(){return mp3Decoder.getMsPerFrame();}
+    public int getMsPerFrame() {
+        return mp3Decoder.getMsPerFrame();
+    }
 
     /**
      * 取得目前音樂檔的全長
-     * @return  單位為毫秒
+     *
+     * @return 單位為毫秒
      */
-    public int getDuration(){return mp3Decoder.getDuration();}
+    public int getDuration() {
+        return mp3Decoder.getDuration();
+    }
 
     /**
      * 取得目前音樂檔的全長
+     *
      * @return 格式為 mm : ss
      */
-    public String getDurationFormatted()
-    {
+    public String getDurationFormatted() {
         String str = "";
         int min = (getDuration() / 1000) / 60;
         str += min;
-        if(min < 10)
+        if (min < 10)
             str = 0 + str;
         str += " : ";
         String sec = "" + (getDuration() / 1000) % 60;
-        if(sec.length() == 1)
+        if (sec.length() == 1)
             sec = 0 + sec;
         str += sec;
         return str;
@@ -364,25 +367,25 @@ public class Player{
 
     /**
      * 取得目前播放到的位置
+     *
      * @return 單位為毫秒
      */
-    public int getCurrentPosition()
-    {
+    public int getCurrentPosition() {
         return currentPos * getMsPerFrame();
     }
 
     /**
      * 取得目前播放到的位置
+     *
      * @return 格式為 mm : ss
      */
-    public String getCurrentPositionFormatted()
-    {
+    public String getCurrentPositionFormatted() {
         String str;
-        String min = "" + (currentPos*getMsPerFrame() / 1000) / 60;
-        if(min.length() == 1)
+        String min = "" + (currentPos * getMsPerFrame() / 1000) / 60;
+        if (min.length() == 1)
             min = 0 + min;
-        String sec = "" + (currentPos*getMsPerFrame() / 1000) % 60;
-        if(sec.length() == 1)
+        String sec = "" + (currentPos * getMsPerFrame() / 1000) % 60;
+        if (sec.length() == 1)
             sec = 0 + sec;
         str = min + " : " + sec;
         return str;

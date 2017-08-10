@@ -7,8 +7,8 @@ public interface MusicDecoder {
 
     /**
      * 取得下一個解碼後的frame
-     * @return   PCM data
      *
+     * @return PCM data
      */
     public short[] decodeFrame();
 }

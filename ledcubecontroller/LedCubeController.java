@@ -12,26 +12,14 @@ import java.util.ArrayDeque;
  */
 public class LedCubeController {
 
-    public static void main(String args[])
-    {
-        LedCubeController deviceController = new LedCubeController();
-
-        /*byte[] command = deviceController.command( ASSIGN, DISPLAY+SAME_COLOR_STRIP, 0,  216);
-        for(int i = 0; i < command.length; i++)
-            System.out.println(command[i]);*/
-        deviceController.sameColorStrip(true, 0, 216, 0x00FFFF00);
-    }
-
     /*command number*/
     public static final int ASSIGN = -1;
     public static final int INTERRUPT = 0;
     public static final int DELAY = (1 << 1);
     public static final int OUTPUT = (2 << 1);
-
     /*assign oFlag*/
     public static final int NOT_DISPLAY = 0;
     public static final int DISPLAY = (1 << 1);
-
     /*assign fCode*/
     public static final int SET = 0;
     public static final int CLEAR_AND_SET = (1 << 2);
@@ -41,57 +29,60 @@ public class LedCubeController {
     public static final int STRIP = (5 << 2);
     public static final int LINE = (6 << 2);
     public static final int DEFAULT_COMMAND_LENGTH = 3;
-
-
     private OutputStream outputStream = null;
     private InputStream inputStream = null;
-
     private ArrayDeque<byte[]> transferQueue = new ArrayDeque<>();
     private int totalSizeInQueue = 0;
     private int availableTransferSize = 63;
+    public LedCubeController() {
+    }
 
+    public static void main(String args[]) {
+        LedCubeController deviceController = new LedCubeController();
 
-
-    public LedCubeController()
-    {
+        /*byte[] command = deviceController.command( ASSIGN, DISPLAY+SAME_COLOR_STRIP, 0,  216);
+        for(int i = 0; i < command.length; i++)
+            System.out.println(command[i]);*/
+        deviceController.sameColorStrip(true, 0, 216, 0x00FFFF00);
     }
 
     /**
      * 選擇將要執行的命令，產生對應的指令碼，(主要資料見指令規格)
+     *
      * @param command  命令
-     * @param funcCode  一些指令會有比較特殊的funcCode可在此指定，沒有的話請填 0，會直接以command為準自動填入
+     * @param funcCode 一些指令會有比較特殊的funcCode可在此指定，沒有的話請填 0，會直接以command為準自動填入
      * @param number
-     * @return  指令碼
+     * @return 指令碼
      */
-    public byte[] command(int command, int funcCode, int number)
-    {
+    public byte[] command(int command, int funcCode, int number) {
         byte[] cmd = new byte[DEFAULT_COMMAND_LENGTH];
         byte dataFlag = 0;
-        switch(command)
-        {
+        switch (command) {
             case ASSIGN:
                 dataFlag = 1;
                 break;
-            case INTERRUPT: case DELAY: case OUTPUT:
+            case INTERRUPT:
+            case DELAY:
+            case OUTPUT:
                 dataFlag = 0;
                 funcCode = command;
                 break;
         }
         cmd[0] = (byte) (dataFlag + funcCode);
-        cmd[1] = (byte) ( (number >> 8)& 0x00ff);
+        cmd[1] = (byte) ((number >> 8) & 0x00ff);
         cmd[2] = (byte) (number & 0x00ff);
 
         return cmd;
     }
 
-    public byte[] command(int command, int funcCode, int high, int low)
-    {
+    public byte[] command(int command, int funcCode, int high, int low) {
         int number = ((high & 0x00FF) << 8) + (low & 0x00FF);
         return command(command, funcCode, number);
     }
 
     /**
      * 對已連線的裝置送出一組資料
+     *
      * @param buf
      * @throws IOException
      * @throws NullPointerException
@@ -102,8 +93,9 @@ public class LedCubeController {
     }
 
     /**
-     *將一個4bytes的整數拆成 <code> byte[] </code> 來傳送，高位元組最先傳，低位元組最後傳
-     * @param data  欲傳送的整數
+     * 將一個4bytes的整數拆成 <code> byte[] </code> 來傳送，高位元組最先傳，低位元組最後傳
+     *
+     * @param data 欲傳送的整數
      * @throws IOException
      */
     public void send(int data) throws IOException {
@@ -118,19 +110,19 @@ public class LedCubeController {
 
     /**
      * 包裝 "單色連續多個燈" 命令與資料，並加入到傳輸佇列中
-     * @param output    是否輸出到燈
-     * @param offset     起點位置
-     * @param number  欲設定的燈數
-     * @param color      欲設定的顏色
+     *
+     * @param output 是否輸出到燈
+     * @param offset 起點位置
+     * @param number 欲設定的燈數
+     * @param color  欲設定的顏色
      */
-    public void sameColorStrip(boolean output, int offset, int number, int color)
-    {
-        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SAME_COLOR_STRIP, offset, number);
-        for(byte b : cmd)
+    public void sameColorStrip(boolean output, int offset, int number, int color) {
+        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + SAME_COLOR_STRIP, offset, number);
+        for (byte b : cmd)
             System.out.println(b);
         addToQueue(cmd);
         cmd = new byte[3];
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
             //System.out.println(cmd[i]);
         }
@@ -139,33 +131,33 @@ public class LedCubeController {
 
     /**
      * 包裝 "設定背景" 命令與資料，並加入到傳輸佇列中
-     * @param output    是否輸出到燈
-     * @param number   圖形的編號
-     * @param color      欲設定的顏色
+     *
+     * @param output 是否輸出到燈
+     * @param number 圖形的編號
+     * @param color  欲設定的顏色
      */
-    public void setSetBackground(boolean output, int number, int color)
-    {
-        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+SET_BACKGROUND, number);
+    public void setSetBackground(boolean output, int number, int color) {
+        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + SET_BACKGROUND, number);
         addToQueue(cmd);
         cmd = new byte[3];
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
         addToQueue(cmd);
     }
 
     /**
      * 包裝 "直線" 命令與資料，並加入到傳輸佇列中
+     *
      * @param output 是否輸出到燈
      * @param point1 起點
      * @param point2 終點
-     * @param color   直線的顏色
+     * @param color  直線的顏色
      */
-    public void line(boolean output, int point1, int point2, int color)
-    {
-        byte[] cmd = command(ASSIGN, (output?DISPLAY:NOT_DISPLAY)+LINE, point1, point2);
+    public void line(boolean output, int point1, int point2, int color) {
+        byte[] cmd = command(ASSIGN, (output ? DISPLAY : NOT_DISPLAY) + LINE, point1, point2);
         addToQueue(cmd);
         cmd = new byte[3];
-        for(int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {
             cmd[i] = (byte) (color >> (8 * (3 - (i + 1))));
             //System.out.println(cmd[i]);
         }
@@ -175,12 +167,11 @@ public class LedCubeController {
 
     /**
      * 加入一組資料到傳輸佇列裡
-     * @param buf  資料
+     *
+     * @param buf 資料
      */
-    public void addToQueue(byte[] buf)
-    {
-        if(buf != null)
-        {
+    public void addToQueue(byte[] buf) {
+        if (buf != null) {
             transferQueue.addLast(buf);
             totalSizeInQueue += buf.length;
         }
@@ -188,10 +179,10 @@ public class LedCubeController {
 
     /**
      * 將一個 4 bytes 的資料加入到傳輸佇列裡
+     *
      * @param data 資料
      */
-    public void addToQueue(int data)
-    {
+    public void addToQueue(int data) {
         byte[] buf = new byte[4];
         for (int i = 0; i < buf.length; i++) {
             buf[buf.length - i - 1] = (byte) data;
@@ -202,22 +193,20 @@ public class LedCubeController {
 
     /**
      * 將傳輸佇列裡的資料輸出並清空
+     *
      * @throws IOException
      * @throws NullPointerException
      */
-    public void sendQueue() throws IOException, NullPointerException
-    {
+    public void sendQueue() throws IOException, NullPointerException {
         byte[] buf = new byte[totalSizeInQueue];
         int i = 0;
-        for(byte[] bs : transferQueue)
-        {
-            for(byte b : bs)
-            {
+        for (byte[] bs : transferQueue) {
+            for (byte b : bs) {
                 buf[i] = b;
                 //System.out.print(b + " ");
                 i++;
             }
-           //System.out.println();
+            //System.out.println();
         }
         transferQueue.clear();
         totalSizeInQueue = 0;
@@ -252,25 +241,29 @@ public class LedCubeController {
 //        return communicating;
 //    }
 
-    public InputStream getInputStream()
-    {
+    public InputStream getInputStream() {
         return inputStream;
     }
 
-    public int read() throws IOException
-    {
+    /**
+     * 替換輸入串流，供不同的裝置實作方式(ex. 藍牙)來呼叫以順利順利使用相同的方法來接收資料
+     *
+     * @param i 欲使用的裝置所提供的InputStream
+     */
+    protected void setInputStream(InputStream i) {
+        inputStream = i;
+    }
+
+    public int read() throws IOException {
         return inputStream.read();
     }
 
     /**
      * 替換輸出串流，供不同的裝置實作方式(ex. 藍牙)來呼叫以順利使用相同的方法來傳送命令與資料
+     *
      * @param o 欲使用的裝置所提供的OutputStream
      */
-    protected void setOutputStream(OutputStream o){outputStream = o;}
-
-    /**
-     * 替換輸入串流，供不同的裝置實作方式(ex. 藍牙)來呼叫以順利順利使用相同的方法來接收資料
-     * @param i 欲使用的裝置所提供的InputStream
-     */
-    protected void setInputStream(InputStream i){inputStream = i;}
+    protected void setOutputStream(OutputStream o) {
+        outputStream = o;
+    }
 }
