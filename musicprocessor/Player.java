@@ -123,6 +123,8 @@ public class Player {
             e.printStackTrace();
             pause = true;
             return -1;
+        } catch (NullPointerException e) {
+            return -1;
         }
         pause = true;
         return ret;
