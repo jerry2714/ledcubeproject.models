@@ -170,19 +170,31 @@ public class Mp3Decoder implements MusicDecoder {
 
     private void calculateTimeInfo() {
         Header h = null;
+        int count = 0;
         try {
             h = bitstream.readFrame();
         } catch (BitstreamException ex) {
             ex.printStackTrace();
         }
         msPerFrame = (int) h.ms_per_frame();
-        long tn = 0;
-        try {
-            tn = fin.getChannel().size();
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-        duration = (int) h.total_ms((int) tn);
+//        long tn = 0;
+//        try {
+//            tn = fin.getChannel().size();
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+//        duration = (int) h.total_ms((int) tn);
+        // *** 某些歌曲出現計算出的長度超出實際長度的情況，故改採整個檔案跑完計數的方式
+        do {
+            try {
+                bitstream.closeFrame();
+                h = bitstream.readFrame();
+                count++;
+            } catch (BitstreamException e) {
+                e.printStackTrace();
+            }
+        }while (h != null);
+        duration = count * msPerFrame;
     }
 
     /**
