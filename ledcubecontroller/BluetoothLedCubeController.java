@@ -64,6 +64,12 @@ public class BluetoothLedCubeController extends LedCubeController {
         }
     }
 
+    public boolean isOpen() {
+        if(bluetoothAdapter != null && bluetoothAdapter.isEnabled())
+            return true;
+        return false;
+    }
+
     /**
      * 取得所有已配對的裝置的名稱
      *

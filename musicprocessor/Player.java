@@ -304,7 +304,14 @@ public class Player {
      * @param c
      */
     public void addPlayingAction(Callback c) {
-        playingActions.add(c);
+        if(!playingActions.contains(c))
+            playingActions.add(c);
+    }
+
+
+    public void removePlayingAction(Callback c) {
+        if(playingActions.contains(c))
+            playingActions.remove(c);
     }
 
     /**
